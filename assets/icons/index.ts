@@ -1,0 +1,12 @@
+export const ic_assets = require("@/assets/icons/ic_assets.png");
+export const ic_download = require("@/assets/icons/ic_download.png");
+export const ic_gallery = require("@/assets/icons/ic_gallery.png");
+export const ic_home = require("@/assets/icons/ic_home.png");
+export const ic_profile = require("@/assets/icons/ic_profile.png");
+export const ic_setting = require("@/assets/icons/ic_setting.png");
+export const ic_upload = require("@/assets/icons/ic_upload.png");
+export const ic_facebook = require("@/assets/icons/ic_facebook.png");
+export const ic_whatsapp = require("@/assets/icons/ic_whatsapp.png");
+export const ic_instagram = require("@/assets/icons/ic_instagram.png");
+export const ic_redo = require("@/assets/icons/ic_redo.png");
+export const ic_undo = require("@/assets/icons/ic_undo.png");

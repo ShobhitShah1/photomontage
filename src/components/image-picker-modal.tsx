@@ -9,12 +9,16 @@ import {
   View,
 } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
+import type { SelectionSource } from "../../store/selection-store";
 import { colors, radii, spacing } from "../theme/tokens";
 
 interface ImagePickerModalProps {
   visible: boolean;
   onClose: () => void;
-  onPicked: (assets: ImagePicker.ImagePickerAsset[]) => void;
+  onPicked: (
+    assets: ImagePicker.ImagePickerAsset[],
+    source: SelectionSource
+  ) => void;
 }
 
 const LibraryIcon = () => (
@@ -93,7 +97,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
       });
 
       if (!res.canceled) {
-        onPicked(res.assets);
+        onPicked(res.assets, "library");
         onClose();
       }
     } catch (e) {
@@ -115,7 +119,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
       const res = await ImagePicker.launchCameraAsync({ quality: 1 });
 
       if (!res.canceled) {
-        onPicked(res.assets);
+        onPicked(res.assets, "camera");
         onClose();
       }
     } catch (e) {

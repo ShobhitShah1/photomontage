@@ -1,21 +1,24 @@
+import { CanvasImage } from "@/components/canvas/canvas-image";
+import { mapAssetsToImages, useSelectionStore } from "@/store/selection-store";
 import * as ImageManipulator from "expo-image-manipulator";
-import React, { useRef, useState } from "react";
-import { Alert, View, useWindowDimensions } from "react-native";
+import type { ImagePickerAsset } from "expo-image-picker";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, StyleSheet, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ViewShot from "react-native-view-shot";
-import { exportComposition } from "../services/export-service";
-import { Layer, useEditorStore } from "../state/store";
+import EmptyCanvasState from "../../components/empty-canvas-state";
+import { exportComposition } from "../../services/export-service";
+import { Layer, useEditorStore } from "../../store/store";
 import { colors, radii, spacing } from "../theme/tokens";
-import { CanvasImage } from "./canvas-image";
 import { Cropper } from "./cropper";
-import EmptyCanvasState from "./empty-canvas-state";
 import { GridOverlay } from "./grid-overlay";
 import { ImagePickerModal } from "./image-picker-modal";
+import { SelectionStrip } from "./selection-strip";
 import { Toolbar } from "./toolbar";
 
 export const CanvasScreen: React.FC = () => {
   const { width: screenW, height: screenH } = useWindowDimensions();
-  const [canvasSize, setCanvasSize] = React.useState({
+  const [canvasSize, setCanvasSize] = useState({
     width: screenW,
     height: screenH,
   });
@@ -37,20 +40,35 @@ export const CanvasScreen: React.FC = () => {
     redo,
     randomizeLayers,
   } = useEditorStore();
+  const appendSelection = useSelectionStore((state) => state.appendImages);
+  const setActiveImage = useSelectionStore((state) => state.setActive);
+  const selectionImages = useSelectionStore((state) => state.images);
+  const activeSelectionId = useSelectionStore((state) => state.activeId);
 
   React.useEffect(() => {
     setCanvas({ width: canvasSize.width, height: canvasSize.height });
   }, [canvasSize.width, canvasSize.height]);
 
+  useEffect(() => {
+    setActiveImage(selectedLayerId);
+  }, [selectedLayerId, setActiveImage]);
+
   const onPicked = async (
-    assets: { uri: string; width?: number; height?: number }[]
+    assets: ImagePickerAsset[],
+    source: "library" | "camera"
   ) => {
+    const prepared = mapAssetsToImages(assets, source);
+    if (prepared.length === 0) {
+      return;
+    }
     const next: Layer[] = [];
-    for (let i = 0; i < assets.length; i++) {
-      const a = assets[i];
+    const enriched: typeof prepared = [];
+    for (let i = 0; i < prepared.length; i++) {
+      const image = prepared[i];
       let thumbUri: string | undefined;
+
       try {
-        const ctx = ImageManipulator.ImageManipulator.manipulate(a.uri);
+        const ctx = ImageManipulator.ImageManipulator.manipulate(image.uri);
         ctx.resize({ width: 512 });
         const img = await ctx.renderAsync();
         const saved = await img.saveAsync({
@@ -59,12 +77,15 @@ export const CanvasScreen: React.FC = () => {
         });
         thumbUri = saved.uri;
       } catch {}
-      const baseW = Math.min(canvasSize.width * 0.6, a.width ?? 800);
-      const baseH = Math.min(canvasSize.height * 0.6, a.height ?? 800);
+
+      const baseW = Math.min(canvasSize.width * 0.6, image.width ?? 800);
+      const baseH = Math.min(canvasSize.height * 0.6, image.height ?? 800);
+      const enrichedImage = { ...image, thumbUri };
+      enriched.push(enrichedImage);
       next.push({
-        id: `${Date.now()}-${i}`,
-        originalUri: a.uri,
-        thumbUri,
+        id: enrichedImage.id,
+        originalUri: enrichedImage.uri,
+        thumbUri: enrichedImage.thumbUri,
         x: 20 + i * 10,
         y: 20 + i * 10,
         scale: 1,
@@ -74,11 +95,31 @@ export const CanvasScreen: React.FC = () => {
         z: i + 1,
       });
     }
+    appendSelection(enriched);
     addLayers(next);
+    setActiveImage(enriched.at(-1)?.id ?? null);
   };
 
+  const handleSelect = useCallback(
+    (id: string | null) => {
+      selectLayer(id);
+      setActiveImage(id);
+    },
+    [selectLayer, setActiveImage]
+  );
+
+  const handleStripSelect = useCallback(
+    (id: string) => {
+      handleSelect(id);
+    },
+    [handleSelect]
+  );
+
   const exportImage = async () => {
-    if (!viewRef.current) return;
+    if (!viewRef.current) {
+      return;
+    }
+
     try {
       const uri = await exportComposition({
         viewRef: viewRef,
@@ -86,12 +127,9 @@ export const CanvasScreen: React.FC = () => {
         height: canvasSize.height,
         scaleFactor: 2,
       });
-      console.log("saved:", uri);
+
       Alert.alert("Saved", uri?.toString(), [
-        {
-          text: "Okay, thanks!",
-          onPress: () => {},
-        },
+        { text: "Okay, thanks!", onPress: () => {} },
       ]);
     } catch (e) {
       console.warn(String(e));
@@ -133,7 +171,7 @@ export const CanvasScreen: React.FC = () => {
                     key={l.id}
                     layer={l}
                     isSelected={l.id === selectedLayerId}
-                    onSelect={(id) => selectLayer(id)}
+                    onSelect={handleSelect}
                     onChange={(nl) => updateLayer(l.id, nl)}
                     onRequestCrop={(id) => setCropLayerId(id)}
                   />
@@ -143,33 +181,32 @@ export const CanvasScreen: React.FC = () => {
           </ViewShot>
         </View>
       </View>
-      <View
-        style={{
-          position: "absolute",
-          left: spacing.md,
-          right: spacing.md,
-          bottom: spacing.md,
-          backgroundColor: colors.surface,
-          borderColor: "#fff",
-          borderWidth: 1,
-          borderRadius: radii.lg,
-          boxShadow: "0px 0px 10px 0.5px rgba(255,255,255,0.5)",
-        }}
-      >
-        <Toolbar
-          onAdd={() => setPickerVisible(true)}
-          onUndo={undo}
-          onRedo={redo}
-          onGridToggle={toggleGrid}
-          onRandomize={randomizeLayers}
-          onExport={exportImage}
-        />
+      <View style={styles.bottomContainer}>
+        {selectionImages.length > 0 && (
+          <View style={styles.stripContainer}>
+            <SelectionStrip
+              images={selectionImages}
+              activeId={activeSelectionId}
+              onSelect={handleStripSelect}
+            />
+          </View>
+        )}
+        <View style={styles.toolBarContainer}>
+          <Toolbar
+            onAdd={() => setPickerVisible(true)}
+            onUndo={undo}
+            onRedo={redo}
+            onGridToggle={toggleGrid}
+            onRandomize={randomizeLayers}
+            onExport={exportImage}
+          />
+        </View>
       </View>
 
       <ImagePickerModal
         visible={pickerVisible}
         onClose={() => setPickerVisible(false)}
-        onPicked={onPicked as any}
+        onPicked={onPicked}
       />
 
       {cropLayerId &&
@@ -181,8 +218,20 @@ export const CanvasScreen: React.FC = () => {
               visible={true}
               uri={layer.originalUri}
               onCancel={() => setCropLayerId(null)}
-              onDone={({ uri, rect }) => {
-                updateLayer(layer.id, { croppedUri: uri, cropRect: rect });
+              onDone={({
+                uri,
+                maskPath,
+                bounds,
+                croppedWidth,
+                croppedHeight,
+              }) => {
+                updateLayer(layer.id, {
+                  croppedUri: uri,
+                  maskPath,
+                  maskBounds: bounds,
+                  width: croppedWidth,
+                  height: croppedHeight,
+                });
                 setCropLayerId(null);
               }}
             />
@@ -191,3 +240,29 @@ export const CanvasScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
+
+export const styles = StyleSheet.create({
+  bottomContainer: {
+    position: "absolute",
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.md,
+  },
+  stripContainer: {
+    backgroundColor: colors.surface,
+    borderColor: "#fff",
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.sm,
+    boxShadow: "0px 0px 10px 0.5px rgba(255,255,255,0.5)",
+  },
+  toolBarContainer: {
+    backgroundColor: colors.surface,
+    borderColor: "#fff",
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    boxShadow: "0px 0px 10px 0.5px rgba(255,255,255,0.5)",
+  },
+});
