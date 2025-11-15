@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
 import type { SelectionSource } from "../../store/selection-store";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, spacing } from "../../utiles/tokens";
 
 interface ImagePickerModalProps {
   visible: boolean;
@@ -72,14 +72,11 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 
   const request = async (permissionRequest: () => Promise<any>) => {
     const { granted } = await permissionRequest();
-    if (!granted) {
-      // You could show an alert here if you wanted
-      return false;
-    }
+    if (!granted) return false;
     return true;
   };
 
-  const pick = async () => {
+  const pickFromLibrary = async () => {
     setBusy(true);
     try {
       const granted = await request(
@@ -92,7 +89,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 
       const res = await ImagePicker.launchImageLibraryAsync({
         allowsMultipleSelection: true,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: "images",
         quality: 1,
       });
 
@@ -107,7 +104,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
     }
   };
 
-  const camera = async () => {
+  const openCamera = async () => {
     setBusy(true);
     try {
       const granted = await request(ImagePicker.requestCameraPermissionsAsync);
@@ -139,46 +136,51 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={handleClose}
     >
       <Pressable style={styles.backdrop} onPress={handleClose}>
-        <View style={styles.modalContainer}>
-          <Pressable style={styles.card}>
-            <Text style={styles.title}>Add Image</Text>
-            <Text style={styles.subtitle}>
-              Choose from your library or take a new photo.
-            </Text>
+        <View style={styles.bottomContainer}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <View style={styles.handle} />
 
-            <View style={styles.buttonContainer}>
-              <OptionButton
+            <View style={styles.header}>
+              <Text style={styles.title}>Add image</Text>
+              <Text style={styles.subtitle}>
+                Drop in a photo from your library or capture a new one.
+              </Text>
+            </View>
+
+            <View style={styles.tileRow}>
+              <ActionTile
                 icon={<LibraryIcon />}
-                label="Choose from Library"
-                onPress={pick}
+                title="Photo library"
+                description="Pick one or multiple images."
+                onPress={pickFromLibrary}
                 disabled={busy}
               />
-              <View style={styles.divider} />
-              <OptionButton
+              <ActionTile
                 icon={<CameraIcon />}
-                label="Use Camera"
-                onPress={camera}
+                title="Use camera"
+                description="Take a quick photo."
+                onPress={openCamera}
                 disabled={busy}
               />
             </View>
 
             {busy && (
-              <View style={styles.loadingOverlay}>
+              <View style={styles.loadingOverlay} pointerEvents="none">
                 <ActivityIndicator color={colors.text} size="small" />
               </View>
             )}
           </Pressable>
 
           <Pressable
-            style={[styles.card, styles.cancelCard]}
+            style={styles.cancelButton}
             onPress={handleClose}
             disabled={busy}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.cancelText}>Close</Text>
           </Pressable>
         </View>
       </Pressable>
@@ -186,32 +188,39 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   );
 };
 
-interface OptionButtonProps {
+interface ActionTileProps {
   icon: React.ReactNode;
-  label: string;
+  title: string;
+  description: string;
   onPress: () => void;
   disabled: boolean;
 }
 
-const OptionButton: React.FC<OptionButtonProps> = ({
+const ActionTile: React.FC<ActionTileProps> = ({
   icon,
-  label,
+  title,
+  description,
   onPress,
   disabled,
-}) => (
-  <Pressable
-    style={({ pressed }) => [
-      styles.optionButton,
-      pressed && !disabled && { backgroundColor: colors.overlay },
-      disabled && { opacity: 0.5 },
-    ]}
-    onPress={onPress}
-    disabled={disabled}
-  >
-    {icon}
-    <Text style={styles.optionText}>{label}</Text>
-  </Pressable>
-);
+}) => {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.tile,
+        pressed && !disabled && styles.tilePressed,
+        disabled && styles.tileDisabled,
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <View style={styles.tileIconContainer}>{icon}</View>
+      <View style={styles.tileTextContainer}>
+        <Text style={styles.tileTitle}>{title}</Text>
+        <Text style={styles.tileDescription}>{description}</Text>
+      </View>
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   backdrop: {
@@ -219,67 +228,112 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "flex-end",
   },
-  modalContainer: {
-    margin: spacing.md,
+  bottomContainer: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.sm,
   },
-  card: {
+  sheet: {
     backgroundColor: colors.surface,
-    overflow: "hidden",
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-  },
-  cancelCard: {
-    borderColor: "#fff",
-    borderWidth: 1,
-    paddingVertical: 3,
     borderRadius: radii.lg,
-    boxShadow: "0px 0px 10px 0.5px rgba(255,255,255,0.5)",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    overflow: "hidden",
+    shadowColor: "rgba(0,0,0,0.9)",
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  handle: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.22)",
+    marginBottom: spacing.md,
+  },
+  header: {
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
-    textAlign: "center",
-    paddingTop: spacing.lg,
-    paddingBottom: 5,
-    paddingHorizontal: spacing.lg,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 13,
     color: colors.textMuted,
-    textAlign: "center",
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
   },
-  buttonContainer: {
-    backgroundColor: "rgba(0,0,0,0.03)",
-    marginBottom: 10,
+  tileRow: {
+    flexDirection: "row",
+    marginTop: spacing.sm,
+    gap: 10,
   },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(0,0,0,0.08)",
-  },
-  optionButton: {
+  tile: {
+    flex: 1,
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
   },
-  optionText: {
+  tilePressed: {
+    backgroundColor: colors.overlay,
+  },
+  tileDisabled: {
+    opacity: 0.5,
+  },
+  tileIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    marginRight: spacing.md,
+  },
+  tileTextContainer: {
+    flex: 1,
+  },
+  tileTitle: {
     color: colors.text,
-    fontSize: 16,
-    fontWeight: "500",
-    marginLeft: spacing.md,
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  tileDescription: {
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  cancelButton: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.5)",
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "rgba(0,0,0,0.8)",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
   },
   cancelText: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    textAlign: "center",
-    padding: spacing.lg,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.12)",
     justifyContent: "center",
     alignItems: "center",
   },

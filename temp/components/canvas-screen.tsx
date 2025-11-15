@@ -9,7 +9,7 @@ import ViewShot from "react-native-view-shot";
 import EmptyCanvasState from "../../components/empty-canvas-state";
 import { exportComposition } from "../../services/export-service";
 import { Layer, useEditorStore } from "../../store/store";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, spacing } from "../../utiles/tokens";
 import { Cropper } from "./cropper";
 import { GridOverlay } from "./grid-overlay";
 import { ImagePickerModal } from "./image-picker-modal";

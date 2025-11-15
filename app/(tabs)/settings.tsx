@@ -12,10 +12,10 @@ import { FACEBOOK_LINK, INSTAGRAM_LINK } from "@/constants/server";
 import { useTheme } from "@/context/theme-context";
 import { openAppForRating, shareAppWithFriends } from "@/utiles/app-utilities";
 import { Ionicons } from "@expo/vector-icons";
+import * as Config from "expo-constants";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import {
-  Alert,
   Linking,
   Pressable as RNPressable,
   StyleProp,
@@ -102,23 +102,6 @@ function SettingsScreen() {
   const { theme, setThemeMode, isDark } = useTheme();
 
   const commonStyles = useCommonThemedStyles();
-
-  const [showAddPhoneModal, setShowAddPhoneModal] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
-
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {},
-      },
-    ]);
-  };
 
   const openInstagram = () => {
     Linking.openURL(INSTAGRAM_LINK);
@@ -223,7 +206,7 @@ function SettingsScreen() {
 
         <RNPressable>
           <Text style={[styles.versionText, { color: theme.textSecondary }]}>
-            Version 1.0.0
+            Version {Config.default.expoConfig?.version}
           </Text>
         </RNPressable>
       </ScrollView>
@@ -317,9 +300,9 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.semibold,
   },
   versionText: {
-    textAlign: "center",
     fontSize: 14,
-    marginVertical: 20,
+    textAlign: "center",
+    marginVertical: 26,
     fontFamily: FontFamily.semibold,
   },
 });

@@ -44,6 +44,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="preview" options={{ headerShown: false }} />
           <Stack.Screen name="editor" options={{ headerShown: false }} />
+          <Stack.Screen name="gallery-view" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
     );

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Editing",
-    "slug": "Editing",
+    "name": "Photomontage",
+    "slug": "Photomontage",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "editing",
+    "scheme": "photomontage",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -21,11 +21,77 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.photomontage"
+      "package": "com.photomontage",
+      "permissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        ],
+      "blockedPermissions": [
+        "com.google.android.gms.permission.AD_ID"
+      ]
     },
     "plugins": [
+      "./app.plugin.js",
       "expo-router",
-      ["react-native-bootsplash", { "assetsDir": "assets/bootsplash" }]
+      ["react-native-bootsplash", { "assetsDir": "assets/bootsplash", "android": { "parentTheme": "EdgeToEdge", "darkContentBarsStyle": false } }],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Photomontage needs access to your photo library so you can share images with friends in collaborative rooms and add fun emojis together.",
+          "cameraPermission": "Photomontage needs camera access to let you take and share photos directly in your rooms."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Photomontage needs access to your photos so you can share them in collaborative rooms with friends.",
+          "savePhotosPermission": "Photomontage needs permission to save photos so you can keep the fun images you create with friends.",
+          "isAccessMediaLocationEnabled": true,
+          "granularPermissions": [
+            "photo"
+          ]
+        }
+      ],
+      [
+        "react-native-edge-to-edge",
+        {
+          "android": {
+            "parentTheme": "Default",
+            "enforceNavigationBarContrast": false
+          }
+        }
+      ],
+      [
+        "react-native-share",
+        {
+          "ios": [
+            "fb",
+            "instagram",
+            "whatsapp"
+          ],
+          "android": [
+            "com.facebook.katana",
+            "com.instagram.android",
+            "com.whatsapp",
+            "com.snapchat.android"
+          ],
+          "enableBase64ShareAndroid": true
+        }
+      ],
+       [ "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableMinifyInReleaseBuilds": true
+          },
+          "ios": {}
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

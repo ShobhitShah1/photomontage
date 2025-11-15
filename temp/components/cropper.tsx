@@ -22,7 +22,7 @@ import {
 } from "react-native-gesture-handler";
 import { runOnJS, useSharedValue } from "react-native-reanimated";
 import Svg, { Circle, Path } from "react-native-svg";
-import { colors, spacing } from "../theme/tokens";
+import { colors, spacing } from "../../utiles/tokens";
 
 interface CropperProps {
   visible: boolean;

@@ -10,3 +10,6 @@ export const ic_whatsapp = require("@/assets/icons/ic_whatsapp.png");
 export const ic_instagram = require("@/assets/icons/ic_instagram.png");
 export const ic_redo = require("@/assets/icons/ic_redo.png");
 export const ic_undo = require("@/assets/icons/ic_undo.png");
+export const ic_download_image_bg = require("@/assets/icons/ic_download_image_bg.png");
+export const ic_share = require("@/assets/icons/ic_share.png");
+export const ic_snapchat = require("@/assets/icons/ic_snap.png");

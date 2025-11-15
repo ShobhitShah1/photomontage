@@ -3,7 +3,7 @@ import React, { memo, useCallback } from "react";
 import type { ListRenderItem } from "react-native";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import type { PickedImage } from "../../store/selection-store";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, spacing } from "../../utiles/tokens";
 
 interface SelectionStripProps {
   images: PickedImage[];

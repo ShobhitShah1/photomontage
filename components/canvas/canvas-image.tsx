@@ -37,13 +37,14 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
     sync(layer.x, layer.y, layer.scale, layer.rotation);
   }, [layer.x, layer.y, layer.scale, layer.rotation, sync]);
 
-  const src = layer.croppedUri ?? layer.thumbUri ?? layer.originalUri;
-  const isCropped = !!layer.croppedUri && !!layer.maskPath;
+  const src = layer.croppedUri || layer.originalUri;
+  const isCropped = !!layer.croppedUri;
+  const hasMask = !!layer.maskPath && layer.maskPath.length > 0;
 
   const { displayWidth, displayHeight } = useMemo(() => {
     return {
-      displayWidth: Math.max(50, layer.width),
-      displayHeight: Math.max(50, layer.height),
+      displayWidth: layer.width,
+      displayHeight: layer.height,
     };
   }, [layer.width, layer.height]);
 
@@ -57,18 +58,16 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
 
   const finalGesture = Gesture.Simultaneous(doubleTap, gesture);
 
-  const hasMask = !!layer.maskPath && layer.maskPath.length > 0;
-
   if (!src) return null;
 
   const clipId = `clip-${layer.id}`;
 
   const scaledMaskPath = useMemo(() => {
-    if (!hasMask || !layer.maskPath || !isCropped) {
+    if (!hasMask || !layer.maskPath || !isCropped || !layer.cropRect) {
       return layer.maskPath;
     }
     return layer.maskPath;
-  }, [hasMask, isCropped, layer.maskPath]);
+  }, [hasMask, isCropped, layer.maskPath, layer.cropRect]);
 
   return (
     <GestureDetector gesture={finalGesture}>
@@ -91,8 +90,6 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
               {
                 width: displayWidth,
                 height: displayHeight,
-                borderWidth: 2,
-                borderColor: isSelected ? colors.dark.primary : "transparent",
               },
             ]}
           >
@@ -115,24 +112,54 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
                 clipPath={`url(#${clipId})`}
                 preserveAspectRatio="none"
               />
+              {isSelected && (
+                <Path
+                  d={scaledMaskPath}
+                  fill="none"
+                  stroke={colors.dark.primary}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
             </Svg>
           </View>
         ) : (
-          <Image
-            source={{ uri: src }}
+          <View
             style={[
               {
                 width: displayWidth,
                 height: displayHeight,
-                borderRadius: 8,
-                opacity: 1,
-                borderWidth: 2,
-                borderColor: isSelected ? colors.dark.primary : "transparent",
+                overflow: "hidden",
               },
             ]}
-            contentFit="cover"
-            key={src}
-          />
+          >
+            <Image
+              source={{ uri: src }}
+              style={[
+                {
+                  width: displayWidth,
+                  height: displayHeight,
+                  borderRadius: isCropped ? 0 : 8,
+                },
+              ]}
+              contentFit="fill"
+              key={src}
+            />
+            {isSelected && (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    borderWidth: 2,
+                    borderColor: colors.dark.primary,
+                    borderRadius: isCropped ? 0 : 8,
+                    pointerEvents: "none",
+                  },
+                ]}
+              />
+            )}
+          </View>
         )}
       </Animated.View>
     </GestureDetector>

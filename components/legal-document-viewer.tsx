@@ -38,7 +38,6 @@ function LegalDocumentViewer({
       const response = await fetchDocument();
       setDocument(response.data);
     } catch (err) {
-      console.error("Error loading document:", err);
       setError("Failed to load document. Please try again.");
     } finally {
       setLoading(false);
@@ -130,7 +129,7 @@ function LegalDocumentViewer({
   if (loading) {
     return (
       <View style={[commonStyles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={theme.accent} />
+        <ActivityIndicator size="large" color={theme.authBackground} />
         <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
           Loading document...
         </Text>
@@ -143,7 +142,10 @@ function LegalDocumentViewer({
       <View style={[commonStyles.container, styles.centerContent]}>
         <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
         <Pressable
-          style={[styles.retryButton, { backgroundColor: theme.accent }]}
+          style={[
+            styles.retryButton,
+            { backgroundColor: theme.authBackground },
+          ]}
           onPress={loadDocument}
         >
           <Text style={[styles.retryButtonText, { color: theme.background }]}>

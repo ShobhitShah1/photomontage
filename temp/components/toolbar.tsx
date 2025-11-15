@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, spacing } from "../../utiles/tokens";
 
 interface ToolbarProps {
   onAdd: () => void;

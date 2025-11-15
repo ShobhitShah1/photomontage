@@ -9,9 +9,14 @@ import { Pressable } from "../themed";
 interface EditorBottomBarInterface {
   onUploadPress: () => void;
   images: PickedImage[];
+  onImageSelect: (image: PickedImage, index: number) => void;
 }
 
-const EditorBottomBar: FC<EditorBottomBarInterface> = ({ images }) => {
+const EditorBottomBar: FC<EditorBottomBarInterface> = ({
+  images,
+  onImageSelect,
+  onUploadPress,
+}) => {
   const { theme } = useTheme();
 
   return (
@@ -21,6 +26,7 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({ images }) => {
           styles.uploadButton,
           { backgroundColor: theme.buttonBackground },
         ]}
+        onPress={onUploadPress}
       >
         <Image
           source={ic_upload}
@@ -38,7 +44,11 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({ images }) => {
         contentContainerStyle={styles.columnWrapperStyle}
         renderItem={({ index, item }) => {
           return (
-            <Pressable key={index} style={styles.uploadButton}>
+            <Pressable
+              key={index}
+              style={styles.uploadButton}
+              onPress={() => onImageSelect(item, index)}
+            >
               <Image
                 contentFit="cover"
                 source={{ uri: item.uri }}

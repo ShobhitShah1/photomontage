@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-import { colors } from "../theme/tokens";
+import { colors } from "../../utiles/tokens";
 
 interface GridOverlayProps {
   width: number;

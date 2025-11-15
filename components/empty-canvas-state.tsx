@@ -1,3 +1,5 @@
+import { ic_upload } from "@/assets/icons";
+import { Image } from "expo-image";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -41,8 +43,15 @@ export const EmptyCanvasState: React.FC = () => {
       <View style={styles.content}>
         <Text style={styles.mainText}>Your Canvas is Empty</Text>
         <Text style={styles.subText}>
-          Tap the <Text style={styles.highlight}>Add</Text> button below to
-          start creating
+          Tap the{"  "}
+          <Image
+            source={ic_upload}
+            style={{ width: 17, height: 17 }}
+            tintColor={"white"}
+            contentFit="contain"
+          />
+          {"  "}
+          below to start creating
         </Text>
       </View>
 
@@ -91,15 +100,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   highlight: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#fff",
   },
   arrowContainer: {
     position: "absolute",
-    bottom: 80, // Adjust this value to sit just above your toolbar
+    bottom: 10, // Adjust this value to sit just above your toolbar
     alignItems: "center",
-    left: 30,
+    left: 10,
   },
   arrowText: {
     fontSize: 14,

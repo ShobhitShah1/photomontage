@@ -2,13 +2,13 @@ import { ic_gallery, ic_home, ic_setting, ic_upload } from "@/assets/icons";
 import colors from "@/constants/colors";
 import { FontFamily } from "@/constants/fonts";
 import { useTheme } from "@/context/theme-context";
-import { ImagePickerModal } from "@/src/components/image-picker-modal";
 import {
   mapAssetsToImages,
   useSelectionStore,
   type SelectionSource,
-} from "@/src/state/selection-store";
+} from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
+import { ImagePickerModal } from "@/temp/components/image-picker-modal";
 import type { ImagePickerAsset } from "expo-image-picker";
 import { Tabs, usePathname, useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useState } from "react";
