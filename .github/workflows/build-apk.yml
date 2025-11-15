@@ -45,7 +45,7 @@ jobs:
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: gigglam-release-apk
+          name: photomontage-release-apk
           path: photomontage/android/app/build/outputs/apk/release/app-release.apk
 
       - name: Send email notification
@@ -61,7 +61,7 @@ jobs:
           body: |
             Hello Team,
 
-            A new **Photomontage Release APK** build is ready from branch: ${{ github.ref_name }}
+            A new Photomontage Release APK build is ready from branch: ${{ github.ref_name }}
 
             Download it here (GitHub login required):
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
