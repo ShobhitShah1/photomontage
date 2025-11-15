@@ -29,22 +29,20 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install dependencies
-        working-directory: photomontage
         run: yarn install --check-files
 
       - name: Expo prebuild
-        working-directory: photomontage
         run: yarn expo prebuild --platform android --non-interactive
 
       - name: Build Release APK
-        working-directory: photomontage/android
+        working-directory: android
         run: ./gradlew assembleRelease
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: photomontage-release-apk
-          path: photomontage/android/app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
 
       - name: Send email notification
         uses: dawidd6/action-send-mail@v3
