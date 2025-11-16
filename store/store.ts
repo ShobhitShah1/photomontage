@@ -165,11 +165,24 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
 
   undo: () =>
     set((s) => {
-      const prev = s.history.past.pop();
+      if (s.history.past.length === 0) return {} as any;
+
+      const prev = s.history.past[s.history.past.length - 1];
+
       if (!prev) return {} as any;
+
+      if (prev.layers.length === 0 && s.layers.length > 0) {
+        return {} as any;
+      }
+
+      const popped = s.history.past.pop();
+
+      if (!popped) return {} as any;
       const curr = snapshot(s);
+
       s.history.future.unshift(curr);
-      return { ...prev, history: s.history } as any;
+
+      return { ...popped, history: s.history } as any;
     }),
 
   redo: () =>

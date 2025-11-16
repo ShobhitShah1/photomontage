@@ -443,6 +443,7 @@ export default function EditorScreen() {
           handleSelectLayer(image.id);
           setisDetailEditingEnable(true);
         }}
+        onImageDelete={handleImageDelete}
         onUploadPress={() => setPickerVisible(true)}
       />
 
