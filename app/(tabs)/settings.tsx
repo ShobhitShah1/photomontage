@@ -132,7 +132,8 @@ function SettingsScreen() {
             </Text>
             <Switch
               value={isDark}
-              onValueChange={(value) => setThemeMode(value ? "dark" : "light")}
+              onValueChange={(value) => {}}
+              // onValueChange={(value) => setThemeMode(value ? "dark" : "light")}
               trackColor={{ false: "#E5E5E5", true: "#4CAF50" }}
               thumbColor={isDark ? "#fff" : "#fff"}
             />

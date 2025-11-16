@@ -27,11 +27,12 @@ import {
   QualityOption,
   QualitySelectionModal,
 } from "@/components/quality-selection-modal";
-import { useExportImage } from "@/hooks/use-export-image";
+import { useEditorImages } from "@/hooks/use-editor-images";
 import { DownloadProgress, DownloadService } from "@/services/download-service";
 import { useSelectionStore } from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
 import { ImagePickerModal } from "@/temp/components/image-picker-modal";
+import { useIsFocused } from "@react-navigation/native";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useFocusEffect, useRouter } from "expo-router";
 
@@ -76,6 +77,7 @@ const createLayersFromImages = (
 };
 
 export default function EditorScreen() {
+  const isFocus = useIsFocused();
   const router = useRouter();
   const viewRef = useRef<ViewShot>(null);
   const hydratedSession = useRef<string | null>(null);
@@ -93,7 +95,6 @@ export default function EditorScreen() {
   const [downloadProgress, setDownloadProgress] =
     useState<DownloadProgress | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadedImageUri, setDownloadedImageUri] = useState<string>("");
 
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<
     "free" | "1:1" | "3:2" | "4:3" | "16:9"
@@ -118,9 +119,13 @@ export default function EditorScreen() {
     undo,
     redo,
     reset,
+    randomizeLayers: shuffle,
   } = useEditorStore();
 
-  const exportImage = useExportImage({ viewRef, canvasSize });
+  const { handleImagePicked, handleImageDelete } = useEditorImages({
+    canvasWidth: canvasSize.width,
+    canvasHeight: canvasSize.height,
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -175,8 +180,6 @@ export default function EditorScreen() {
   );
 
   const handleQualitySelect = async (quality: QualityOption) => {
-    // if (!roomState.currentImage) return;
-
     try {
       setActive(null);
       setIsDownloading(true);
@@ -189,10 +192,8 @@ export default function EditorScreen() {
       setShowQualityModal(false);
 
       viewRef.current?.capture?.().then(async (uri) => {
-        const downloadResult = await DownloadService.downloadWithQuality(
-          uri,
-          quality,
-          (progress) => setDownloadProgress(progress)
+        await DownloadService.downloadWithQuality(uri, quality, (progress) =>
+          setDownloadProgress(progress)
         );
 
         setDownloadProgress({
@@ -200,9 +201,6 @@ export default function EditorScreen() {
           stage: "complete",
           message: "Download complete!",
         });
-
-        // Store the original captured image URI for contest (the original is still accessible)
-        setDownloadedImageUri(uri);
 
         setTimeout(() => {
           setDownloadProgress(null);
@@ -311,14 +309,38 @@ export default function EditorScreen() {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        if (isDetailEditingEnable) {
-          const hasUnsavedChanges =
-            editingActions?.hasPath && editingActions.hasPath;
+        if (isFocus) {
+          if (isDetailEditingEnable) {
+            const hasUnsavedChanges =
+              editingActions?.hasPath && editingActions.hasPath;
 
-          if (hasUnsavedChanges) {
+            if (hasUnsavedChanges) {
+              Alert.alert(
+                "Discard Changes?",
+                "You have unsaved changes. Do you want to discard them?",
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Discard",
+                    style: "destructive",
+                    onPress: () => {
+                      handleCropCancel();
+                    },
+                  },
+                ]
+              );
+              return true;
+            } else {
+              handleCropCancel();
+              return true;
+            }
+          } else {
             Alert.alert(
               "Discard Changes?",
-              "You have unsaved changes. Do you want to discard them?",
+              "Do you want to discard all changes and go back?",
               [
                 {
                   text: "Cancel",
@@ -328,52 +350,53 @@ export default function EditorScreen() {
                   text: "Discard",
                   style: "destructive",
                   onPress: () => {
-                    handleCropCancel();
+                    router.replace("/");
                   },
                 },
               ]
             );
             return true;
-          } else {
-            handleCropCancel();
-            return true;
           }
-        } else {
-          Alert.alert(
-            "Discard Changes?",
-            "Do you want to discard all changes and go back?",
-            [
-              {
-                text: "Cancel",
-                style: "cancel",
-              },
-              {
-                text: "Discard",
-                style: "destructive",
-                onPress: () => {
-                  router.replace("/");
-                },
-              },
-            ]
-          );
-          return true;
         }
+
+        return false;
       }
     );
 
     return () => backHandler.remove();
   }, [isDetailEditingEnable, editingActions, handleCropCancel, router]);
 
+  const handleUndo = useCallback(() => {
+    undo();
+  }, [undo]);
+
+  const handelShuffle = useCallback(() => {
+    shuffle();
+  }, [shuffle]);
+
+  const handleRedo = useCallback(() => {
+    redo();
+  }, [redo]);
+
+  const handleDownload = useCallback(() => {
+    setShowQualityModal(true);
+  }, []);
+
+  const handleCompleteEditing = useCallback(() => {
+    handleCropCancel();
+  }, [handleCropCancel]);
+
   return (
     <SafeAreaView style={styles.container}>
       <EditorTopBar
-        onRedo={redo}
-        onUndo={undo}
-        onDownload={() => setShowQualityModal(true)}
+        onRedo={handleRedo}
+        onUndo={handleUndo}
+        onDownload={handleDownload}
         onResizeImage={handleAspectRatioChange}
-        onComplateEditing={handleCropCancel}
+        onComplateEditing={handleCompleteEditing}
         isEditing={isDetailEditingEnable}
         editingActions={editingActions || undefined}
+        onShuffle={handelShuffle}
       />
 
       <View style={styles.canvasWrapper}>
@@ -403,7 +426,8 @@ export default function EditorScreen() {
                 //   setisDetailEditingEnable(!isDetailEditingEnable)
                 // }
                 // onSelect={handleSelectLayer}
-                isSelected={layer.id === selectedLayerId}
+                isSelected={false}
+                // isSelected={layer.id === selectedLayerId}
                 onChange={(next) => updateLayer(layer.id, next)}
               />
             ))
@@ -425,7 +449,7 @@ export default function EditorScreen() {
       <ImagePickerModal
         visible={pickerVisible}
         onClose={() => setPickerVisible(false)}
-        onPicked={() => {}}
+        onPicked={handleImagePicked}
       />
 
       <QualitySelectionModal

@@ -13,3 +13,4 @@ export const ic_undo = require("@/assets/icons/ic_undo.png");
 export const ic_download_image_bg = require("@/assets/icons/ic_download_image_bg.png");
 export const ic_share = require("@/assets/icons/ic_share.png");
 export const ic_snapchat = require("@/assets/icons/ic_snap.png");
+export const ic_shuffle = require("@/assets/icons/ic_shuffle.png");

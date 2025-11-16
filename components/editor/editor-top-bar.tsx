@@ -1,4 +1,4 @@
-import { ic_download, ic_redo, ic_undo } from "@/assets/icons";
+import { ic_download, ic_redo, ic_shuffle, ic_undo } from "@/assets/icons";
 import { useTheme } from "@/context/theme-context";
 import { Image } from "expo-image";
 import React, { FC, memo, useCallback, useState } from "react";
@@ -10,6 +10,7 @@ interface EditorTopBarInterface {
   onRedo: () => void;
   onUndo: () => void;
   onDownload: () => void;
+  onShuffle: () => void;
   onComplateEditing: () => void;
   onResizeImage: (aspectRatio: AspectKey) => void;
   editingActions?: {
@@ -40,6 +41,7 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
   onResizeImage,
   onUndo,
   editingActions,
+  onShuffle,
 }) => {
   const { theme } = useTheme();
   const [selectedAspect, setSelectedAspect] = useState<AspectKey>("free");
@@ -112,6 +114,7 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
       <View style={styles.leftGroup}>
         <IconButton icon={ic_undo} onPress={onUndo} />
         <IconButton icon={ic_redo} onPress={onRedo} />
+        <IconButton icon={ic_shuffle} onPress={onShuffle} />
       </View>
 
       <View style={styles.rightGroup}>
@@ -131,40 +134,6 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
             onPress={() => handleSelectAspect(option.key)}
           />
         ))}
-        {/* {editingActions?.hasPath && (
-          <Pressable
-            onPress={editingActions.clearPath}
-            style={[
-              styles.actionButton,
-              { backgroundColor: theme.buttonBackground },
-            ]}
-          >
-            <Text
-              style={[styles.actionButtonText, { color: theme.buttonIcon }]}
-            >
-              Clear
-            </Text>
-          </Pressable>
-        )}
-        {editingActions?.hasPath && (
-          <Pressable
-            onPress={editingActions.toggleEditMode}
-            style={[
-              styles.actionButton,
-              {
-                backgroundColor: editingActions.isEditMode
-                  ? theme.primary
-                  : theme.buttonBackground,
-              },
-            ]}
-          >
-            <Text
-              style={[styles.actionButtonText, { color: theme.buttonIcon }]}
-            >
-              {editingActions.isEditMode ? "Done Edit" : "Edit"}
-            </Text>
-          </Pressable>
-        )} */}
       </View>
 
       <View style={styles.editRightGroup}>
