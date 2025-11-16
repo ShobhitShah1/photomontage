@@ -3,7 +3,7 @@ name: Sync to Client Repo
 on:
   push:
     branches:
-      - main  # Change this to your working branch
+      - main  # Change this to your working branch (master, develop, etc.)
 
 jobs:
   sync:
@@ -13,41 +13,20 @@ jobs:
       - name: Checkout source repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          
-      - name: Setup SSH Key
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.CLIENT_REPO_SSH_KEY }}
-        run: |
-          # Create SSH directory
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          
-          # Add private key (preserve exact formatting including newlines)
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          # Verify key format
-          echo "Checking SSH key format..."
-          head -n 1 ~/.ssh/id_rsa
-          
-          # Add GitHub to known hosts
-          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          
-          # Test SSH connection
-          ssh -T git@github.com || true
+          fetch-depth: 0  # Get full history
           
       - name: Push to client repo
+        env:
+          CLIENT_REPO_TOKEN: ${{ secrets.CLIENT_REPO_TOKEN }}
         run: |
           # Configure git
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "ShobhitShah1"
+          git config --global user.email "shobhitshah094@gmail.com"
           
-          # Add client repo as remote using SSH
-          git remote add client git@github.com:NirvanaTechLabs/photomontage.git
+          # Add client repo as remote with token authentication
+          git remote add client https://${CLIENT_REPO_TOKEN}@github.com/NirvanaTechLabs/photomontage.git
           
-          # Push to client repo
+          # Push to client repo (change branch names if needed)
           git push client main:main --force
           
       - name: Notify on success
