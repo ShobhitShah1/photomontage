@@ -3,7 +3,7 @@ name: Sync to Client Repo
 on:
   push:
     branches:
-      - main  # Change this to your working branch (master, develop, etc.)
+      - main  # Change this to your working branch
 
 jobs:
   sync:
@@ -13,23 +13,22 @@ jobs:
       - name: Checkout source repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Get full history
+          fetch-depth: 0
+          token: ${{ secrets.CLIENT_REPO_TOKEN }}
           
       - name: Push to client repo
-        env:
-          GITHUB_TOKEN: ${{ secrets.CLIENT_REPO_TOKEN }}
         run: |
           # Configure git
           git config --global user.name "ShobhitShah1"
           git config --global user.email "shobhitshah094@gmail.com"
           
-          # Debug: Check if token exists (will show as ***)
-          echo "Token length: ${#GITHUB_TOKEN}"
+          # Use the token directly in the remote URL with proper format
+          git remote add client https://x-access-token:${{ secrets.CLIENT_REPO_TOKEN }}@github.com/NirvanaTechLabs/photomontage.git
           
-          # Add client repo as remote with proper authentication
-          git remote add client https://ShobhitShah1:${GITHUB_TOKEN}@github.com/NirvanaTechLabs/photomontage.git
+          # Verify remote was added
+          git remote -v
           
-          # Push to client repo (change branch names if needed)
+          # Push to client repo
           git push client main:main --force
           
       - name: Notify on success
