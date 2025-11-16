@@ -16,15 +16,13 @@ jobs:
           fetch-depth: 0  # Get full history
           
       - name: Push to client repo
-        env:
-          CLIENT_REPO_TOKEN: ${{ secrets.CLIENT_REPO_TOKEN }}
         run: |
           # Configure git
           git config --global user.name "ShobhitShah1"
           git config --global user.email "shobhitshah094@gmail.com"
           
           # Add client repo as remote with token authentication
-          git remote add client https://${CLIENT_REPO_TOKEN}@github.com/NirvanaTechLabs/photomontage.git
+          git remote add client https://${{ secrets.CLIENT_REPO_TOKEN }}@github.com/NirvanaTechLabs/photomontage.git
           
           # Push to client repo (change branch names if needed)
           git push client main:main --force
