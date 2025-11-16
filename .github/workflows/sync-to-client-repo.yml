@@ -21,13 +21,22 @@ jobs:
         run: |
           # Create SSH directory
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           
-          # Add private key
+          # Add private key (preserve exact formatting including newlines)
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
+          # Verify key format
+          echo "Checking SSH key format..."
+          head -n 1 ~/.ssh/id_rsa
+          
           # Add GitHub to known hosts
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          
+          # Test SSH connection
+          ssh -T git@github.com || true
           
       - name: Push to client repo
         run: |
