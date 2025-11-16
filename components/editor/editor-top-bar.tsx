@@ -1,7 +1,7 @@
-import { ic_download, ic_redo, ic_undo } from "@/assets/icons";
+import { ic_download, ic_redo, ic_shuffle, ic_undo } from "@/assets/icons";
 import { useTheme } from "@/context/theme-context";
 import { Image } from "expo-image";
-import React, { FC, memo, useCallback, useState } from "react";
+import React, { FC, memo, useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Pressable } from "../themed";
 
@@ -10,6 +10,7 @@ interface EditorTopBarInterface {
   onRedo: () => void;
   onUndo: () => void;
   onDownload: () => void;
+  onShuffle: () => void;
   onComplateEditing: () => void;
   onResizeImage: (aspectRatio: AspectKey) => void;
   editingActions?: {
@@ -32,34 +33,17 @@ const aspectOptions: { key: AspectKey; label: string }[] = [
   { key: "16:9", label: "16:9" },
 ];
 
-const EditorTopBar: FC<EditorTopBarInterface> = ({
-  isEditing,
-  onComplateEditing,
-  onDownload,
-  onRedo,
-  onResizeImage,
-  onUndo,
-  editingActions,
-}) => {
-  const { theme } = useTheme();
-  const [selectedAspect, setSelectedAspect] = useState<AspectKey>("free");
-
-  const handleSelectAspect = useCallback(
-    (key: AspectKey) => {
-      setSelectedAspect(key);
-      onResizeImage(key);
-    },
-    [onResizeImage]
-  );
-
-  const IconButton = ({
+const IconButton = memo(
+  ({
     icon,
     onPress,
+    theme,
     size = 45,
     rounded = 12,
   }: {
     icon: number;
     onPress: () => void;
+    theme: { buttonBackground: string; buttonIcon: string };
     size?: number;
     rounded?: number;
   }) => (
@@ -82,16 +66,20 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
         contentFit="contain"
       />
     </Pressable>
-  );
+  )
+);
 
-  const AspectButton = ({
+const AspectButton = memo(
+  ({
     label,
     selected,
     onPress,
+    theme,
   }: {
     label: string;
     selected: boolean;
     onPress: () => void;
+    theme: { buttonBackground: string; buttonIcon: string };
   }) => (
     <Pressable
       onPress={onPress}
@@ -105,98 +93,113 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
         {label}
       </Text>
     </Pressable>
+  )
+);
+
+const EditorTopBar: FC<EditorTopBarInterface> = ({
+  isEditing,
+  onComplateEditing,
+  onDownload,
+  onRedo,
+  onResizeImage,
+  onUndo,
+  onShuffle,
+  editingActions,
+}) => {
+  const { theme } = useTheme();
+  const [selectedAspect, setSelectedAspect] = useState<AspectKey>("free");
+
+  const handleSelectAspect = useCallback(
+    (key: AspectKey) => {
+      setSelectedAspect(key);
+      onResizeImage(key);
+    },
+    [onResizeImage]
   );
 
-  const PreviewView = () => (
-    <>
-      <View style={styles.leftGroup}>
-        <IconButton icon={ic_undo} onPress={onUndo} />
-        <IconButton icon={ic_redo} onPress={onRedo} />
-      </View>
+  const previewView = useMemo(
+    () => (
+      <>
+        <View style={styles.leftGroup}>
+          <IconButton icon={ic_undo} onPress={onUndo} theme={theme} />
+          <IconButton icon={ic_redo} onPress={onRedo} theme={theme} />
+          <IconButton icon={ic_shuffle} onPress={onShuffle} theme={theme} />
+        </View>
 
-      <View style={styles.rightGroup}>
-        <IconButton icon={ic_download} onPress={onDownload} />
-      </View>
-    </>
+        <View style={styles.rightGroup}>
+          <IconButton icon={ic_download} onPress={onDownload} theme={theme} />
+        </View>
+      </>
+    ),
+    [onUndo, onRedo, onDownload, theme]
   );
 
-  const EditingView = () => (
-    <>
-      <View style={styles.editLeftGroup}>
-        {aspectOptions.map((option) => (
-          <AspectButton
-            key={option.key}
-            label={option.label}
-            selected={selectedAspect === option.key}
-            onPress={() => handleSelectAspect(option.key)}
-          />
-        ))}
-        {/* {editingActions?.hasPath && (
+  const editingView = useMemo(
+    () => (
+      <>
+        <View style={styles.editLeftGroup}>
+          {aspectOptions.map((option) => (
+            <AspectButton
+              key={option.key}
+              label={option.label}
+              selected={selectedAspect === option.key}
+              onPress={() => handleSelectAspect(option.key)}
+              theme={theme}
+            />
+          ))}
+        </View>
+
+        <View style={styles.editRightGroup}>
           <Pressable
-            onPress={editingActions.clearPath}
             style={[
-              styles.actionButton,
-              { backgroundColor: theme.buttonBackground },
-            ]}
-          >
-            <Text
-              style={[styles.actionButtonText, { color: theme.buttonIcon }]}
-            >
-              Clear
-            </Text>
-          </Pressable>
-        )}
-        {editingActions?.hasPath && (
-          <Pressable
-            onPress={editingActions.toggleEditMode}
-            style={[
-              styles.actionButton,
+              styles.confirmButton,
               {
-                backgroundColor: editingActions.isEditMode
-                  ? theme.primary
-                  : theme.buttonBackground,
+                backgroundColor: theme.buttonBackground,
+                opacity: editingActions?.canApply ? 1 : 0.5,
               },
             ]}
+            onPress={
+              editingActions?.canApply ? editingActions.applyCrop : undefined
+            }
+            disabled={!editingActions?.canApply}
           >
-            <Text
-              style={[styles.actionButtonText, { color: theme.buttonIcon }]}
-            >
-              {editingActions.isEditMode ? "Done Edit" : "Edit"}
+            <Text style={[styles.confirmLabel, { color: theme.buttonIcon }]}>
+              ✓
             </Text>
           </Pressable>
-        )} */}
-      </View>
-
-      <View style={styles.editRightGroup}>
-        <Pressable
-          style={[
-            styles.confirmButton,
-            {
-              backgroundColor: theme.buttonBackground,
-              opacity: editingActions?.canApply ? 1 : 0.5,
-            },
-          ]}
-          onPress={
-            editingActions?.canApply ? editingActions.applyCrop : undefined
-          }
-          disabled={!editingActions?.canApply}
-        >
-          <Text style={[styles.confirmLabel, { color: theme.buttonIcon }]}>
-            ✓
-          </Text>
-        </Pressable>
-      </View>
-    </>
+        </View>
+      </>
+    ),
+    [
+      selectedAspect,
+      handleSelectAspect,
+      theme,
+      editingActions?.canApply,
+      editingActions?.applyCrop,
+    ]
   );
 
   return (
     <View style={styles.container}>
-      {isEditing ? <EditingView /> : <PreviewView />}
+      {isEditing ? editingView : previewView}
     </View>
   );
 };
 
-export default memo(EditorTopBar);
+export default memo(EditorTopBar, (prevProps, nextProps) => {
+  return (
+    prevProps.isEditing === nextProps.isEditing &&
+    prevProps.onRedo === nextProps.onRedo &&
+    prevProps.onUndo === nextProps.onUndo &&
+    prevProps.onDownload === nextProps.onDownload &&
+    prevProps.onComplateEditing === nextProps.onComplateEditing &&
+    prevProps.onResizeImage === nextProps.onResizeImage &&
+    prevProps.editingActions?.canApply === nextProps.editingActions?.canApply &&
+    prevProps.editingActions?.hasPath === nextProps.editingActions?.hasPath &&
+    prevProps.editingActions?.isEditMode ===
+      nextProps.editingActions?.isEditMode
+  );
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -1,5 +1,6 @@
+import { useImagePicker } from "@/hooks/use-image-picker";
 import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -68,66 +69,30 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   onClose,
   onPicked,
 }) => {
-  const [busy, setBusy] = useState(false);
+  const { pickFromLibrary, openCamera, isBusy } = useImagePicker({
+    allowsMultipleSelection: true,
+    quality: 1,
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  });
 
-  const request = async (permissionRequest: () => Promise<any>) => {
-    const { granted } = await permissionRequest();
-    if (!granted) return false;
-    return true;
-  };
-
-  const pickFromLibrary = async () => {
-    setBusy(true);
-    try {
-      const granted = await request(
-        ImagePicker.requestMediaLibraryPermissionsAsync
-      );
-      if (!granted) {
-        setBusy(false);
-        return;
-      }
-
-      const res = await ImagePicker.launchImageLibraryAsync({
-        allowsMultipleSelection: true,
-        mediaTypes: "images",
-        quality: 1,
-      });
-
-      if (!res.canceled) {
-        onPicked(res.assets, "library");
-        onClose();
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setBusy(false);
+  const handlePickFromLibrary = async () => {
+    const assets = await pickFromLibrary();
+    if (assets && assets.length > 0) {
+      onPicked(assets, "library");
+      onClose();
     }
   };
 
-  const openCamera = async () => {
-    setBusy(true);
-    try {
-      const granted = await request(ImagePicker.requestCameraPermissionsAsync);
-      if (!granted) {
-        setBusy(false);
-        return;
-      }
-
-      const res = await ImagePicker.launchCameraAsync({ quality: 1 });
-
-      if (!res.canceled) {
-        onPicked(res.assets, "camera");
-        onClose();
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setBusy(false);
+  const handleOpenCamera = async () => {
+    const assets = await openCamera();
+    if (assets && assets.length > 0) {
+      onPicked(assets, "camera");
+      onClose();
     }
   };
 
   const handleClose = () => {
-    if (!busy) {
+    if (!isBusy) {
       onClose();
     }
   };
@@ -156,19 +121,19 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                 icon={<LibraryIcon />}
                 title="Photo library"
                 description="Pick one or multiple images."
-                onPress={pickFromLibrary}
-                disabled={busy}
+                onPress={handlePickFromLibrary}
+                disabled={isBusy}
               />
               <ActionTile
                 icon={<CameraIcon />}
                 title="Use camera"
                 description="Take a quick photo."
-                onPress={openCamera}
-                disabled={busy}
+                onPress={handleOpenCamera}
+                disabled={isBusy}
               />
             </View>
 
-            {busy && (
+            {isBusy && (
               <View style={styles.loadingOverlay} pointerEvents="none">
                 <ActivityIndicator color={colors.text} size="small" />
               </View>
@@ -178,7 +143,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
           <Pressable
             style={styles.cancelButton}
             onPress={handleClose}
-            disabled={busy}
+            disabled={isBusy}
           >
             <Text style={styles.cancelText}>Close</Text>
           </Pressable>

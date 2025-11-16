@@ -1,3 +1,4 @@
+import { createSmartLayout } from "@/utiles/editor-utils";
 import { create } from "zustand";
 
 export type Layer = {
@@ -140,23 +141,11 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       pushHistory(s);
       const { width: canvasWidth, height: canvasHeight } = get().canvas;
 
-      const randomizedLayers = s.layers.map((layer) => {
-        const scaledWidth = layer.width * layer.scale;
-        const scaledHeight = layer.height * layer.scale;
-
-        const maxX = canvasWidth - scaledWidth;
-        const maxY = canvasHeight - scaledHeight;
-
-        const newX = Math.max(0, Math.random() * maxX);
-        const newY = Math.max(0, Math.random() * maxY);
-
-        return {
-          ...layer,
-          x: newX,
-          y: newY,
-          rotation: Math.random() * 40 - 20, // Also adds a slight random rotation
-        };
-      });
+      const randomizedLayers = createSmartLayout(
+        s.layers,
+        canvasWidth,
+        canvasHeight
+      );
 
       return {
         layers: randomizedLayers,
@@ -165,11 +154,20 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
 
   undo: () =>
     set((s) => {
-      const prev = s.history.past.pop();
+      if (s.history.past.length === 0) return {} as any;
+
+      const prev = s.history.past[s.history.past.length - 1];
       if (!prev) return {} as any;
+
+      if (prev.layers.length === 0 && s.layers.length > 0) {
+        return {} as any;
+      }
+
+      const popped = s.history.past.pop();
+      if (!popped) return {} as any;
       const curr = snapshot(s);
       s.history.future.unshift(curr);
-      return { ...prev, history: s.history } as any;
+      return { ...popped, history: s.history } as any;
     }),
 
   redo: () =>

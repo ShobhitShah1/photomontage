@@ -3,21 +3,39 @@ import { useTheme } from "@/context/theme-context";
 import { PickedImage } from "@/store/selection-store";
 import { Image } from "expo-image";
 import React, { FC, memo } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { Alert, FlatList, StyleSheet, View } from "react-native";
 import { Pressable } from "../themed";
 
 interface EditorBottomBarInterface {
   onUploadPress: () => void;
   images: PickedImage[];
   onImageSelect: (image: PickedImage, index: number) => void;
+  onImageDelete?: (image: PickedImage) => void;
 }
 
 const EditorBottomBar: FC<EditorBottomBarInterface> = ({
   images,
   onImageSelect,
   onUploadPress,
+  onImageDelete,
 }) => {
   const { theme } = useTheme();
+
+  const handleLongPress = (item: PickedImage) => {
+    if (!onImageDelete) return;
+
+    Alert.alert("Delete Image", "Are you sure you want to delete this image?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => onImageDelete(item),
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -48,6 +66,7 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
               key={index}
               style={styles.uploadButton}
               onPress={() => onImageSelect(item, index)}
+              onLongPress={() => handleLongPress(item)}
             >
               <Image
                 contentFit="cover"
@@ -68,13 +87,14 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     gap: 5,
+    paddingVertical: 5,
     paddingHorizontal: 10,
     flexDirection: "row",
     justifyContent: "space-between",
   },
   uploadButton: {
-    width: 58,
-    height: 68,
+    width: 55,
+    height: 65,
     borderRadius: 12,
     overflow: "hidden",
     alignItems: "center",
