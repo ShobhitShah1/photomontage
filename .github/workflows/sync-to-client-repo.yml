@@ -1,0 +1,41 @@
+name: Sync to Client Repo
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+          
+      - name: Push to client repo
+        env:
+          CLIENT_REPO_TOKEN: ${{ secrets.CLIENT_REPO_TOKEN }}
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add client repo as remote
+          git remote add client https://x-access-token:${CLIENT_REPO_TOKEN}@github.com/NirvanaTechLabs/photomontage.git
+          
+          # Push to client repo
+          git push client main:main --force
+          
+          # If you want to push to a different branch in client repo, use:
+          # git push client main:develop --force
+          
+      - name: Notify on success
+        if: success()
+        run: echo "✅ Successfully synced to client repo"
+        
+      - name: Notify on failure
+        if: failure()
+        run: echo "❌ Failed to sync to client repo"
