@@ -1,3 +1,4 @@
+import { FontFamily } from "@/constants/fonts";
 import { Story } from "@/constants/interface";
 import { getProfileImageUrl } from "@/utiles/asset-url";
 import { Ionicons } from "@expo/vector-icons";
@@ -721,7 +722,13 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
               <View
                 style={{ justifyContent: "center", alignItems: "flex-start" }}
               >
-                <Text style={{ color: "white" }}>
+                <Text
+                  style={{
+                    color: "white",
+                    fontFamily: FontFamily.semibold,
+                    fontSize: 14,
+                  }}
+                >
                   {stories[currentIndex]?.username || ""}
                 </Text>
                 {/* <View

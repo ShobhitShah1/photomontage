@@ -1,14 +1,10 @@
-import type { PickedImage } from "@/store/selection-store";
 import type { Layer } from "@/store/store";
 
 export const createLayersFromImages = (
-  images: PickedImage[],
+  images: any[],
   canvasWidth: number,
   canvasHeight: number
-): Omit<
-  Layer,
-  "croppedUri" | "cropRect" | "maskPath" | "maskBounds" | "thumbUri" | "locked"
->[] => {
+) => {
   return images.map((image, index) => {
     const imgWidth = image.width || 640;
     const imgHeight = image.height || 640;

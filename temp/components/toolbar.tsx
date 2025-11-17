@@ -1,3 +1,4 @@
+import { FontFamily } from "@/constants/fonts";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { colors, radii, spacing } from "../../utiles/tokens";
@@ -28,7 +29,13 @@ const Btn: React.FC<{ title: string; onPress: () => void }> = ({
       pressed && { backgroundColor: "rgba(0,0,0,0.1)" },
     ]}
   >
-    <Text style={{ color: colors.text, fontSize: 14, fontWeight: "500" }}>
+    <Text
+      style={{
+        color: colors.text,
+        fontSize: 14,
+        fontFamily: FontFamily.semibold,
+      }}
+    >
       {title}
     </Text>
   </Pressable>

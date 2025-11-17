@@ -1,3 +1,4 @@
+import { FontFamily } from "@/constants/fonts";
 import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
@@ -260,13 +261,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FontFamily.bold,
     color: colors.text,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 13,
     color: colors.textMuted,
+    fontFamily: FontFamily.semibold,
   },
   tileRow: {
     flexDirection: "row",
@@ -305,12 +307,13 @@ const styles = StyleSheet.create({
   tileTitle: {
     color: colors.text,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FontFamily.bold,
     marginBottom: 2,
   },
   tileDescription: {
     color: colors.textMuted,
     fontSize: 12,
+    fontFamily: FontFamily.semibold,
   },
   cancelButton: {
     backgroundColor: colors.surface,
@@ -329,7 +332,7 @@ const styles = StyleSheet.create({
   cancelText: {
     color: colors.text,
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: FontFamily.bold,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

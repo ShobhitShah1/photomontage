@@ -127,7 +127,6 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    marginTop: 5,
     fontFamily: FontFamily.medium,
     textAlign: "center",
   },

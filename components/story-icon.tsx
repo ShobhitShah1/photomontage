@@ -28,9 +28,7 @@ export const StoryIcon: React.FC<StoryIconProps> = ({
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
-  const gradientColors = isDark
-    ? ["rgba(35, 139, 141, 1)", "rgba(41, 90, 169, 1)"]
-    : ["rgba(23, 221, 226, 1)", "rgba(114, 166, 251, 1)"];
+  const gradientColors = ["rgba(248, 217, 57, 1)", "rgba(248, 217, 57, 1)"];
 
   const handlePressIn = () => {
     scale.value = withSpring(0.95, {
@@ -92,7 +90,7 @@ const styles = StyleSheet.create({
   gradientBorder: {
     width: 70,
     height: 70,
-    padding: 2.5,
+    padding: 1.5,
     borderRadius: 20,
     marginBottom: 3,
     shadowColor: "#000",

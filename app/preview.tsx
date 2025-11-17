@@ -1,4 +1,5 @@
 import { PreviewImage } from "@/components/preview/preview-image";
+import { FontFamily } from "@/constants/fonts";
 import { useTheme } from "@/context/theme-context";
 import { useSelectionStore } from "@/store/selection-store";
 import { generateStackedLayout, ImageLayout } from "@/utiles/preview-layout";
@@ -149,8 +150,8 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: "#0B0B0C",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 17,
+    fontFamily: FontFamily.bold,
   },
   backButton: {
     paddingVertical: spacing.sm,
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     color: colors.text,
     fontSize: 20,
-    fontWeight: "600",
+    fontFamily: FontFamily.bold,
     marginBottom: spacing.md,
   },
   emptySubtitle: {

@@ -1,4 +1,11 @@
-import { ic_download, ic_redo, ic_shuffle, ic_undo } from "@/assets/icons";
+import {
+  ic_check,
+  ic_download,
+  ic_redo,
+  ic_shuffle,
+  ic_undo,
+} from "@/assets/icons";
+import { FontFamily } from "@/constants/fonts";
 import { useTheme } from "@/context/theme-context";
 import { Image } from "expo-image";
 import React, { FC, memo, useCallback, useState } from "react";
@@ -150,9 +157,11 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
           }
           disabled={!editingActions?.canApply}
         >
-          <Text style={[styles.confirmLabel, { color: theme.buttonIcon }]}>
-            ✓
-          </Text>
+          <Image
+            source={ic_check}
+            style={styles.checkIcon}
+            contentFit="contain"
+          />
         </Pressable>
       </View>
     </>
@@ -174,6 +183,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingVertical: 5,
   },
   buttonStyle: {
     alignItems: "center",
@@ -194,6 +204,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    padding: 5,
+    borderRadius: 10,
     flexShrink: 1,
     backgroundColor: "rgba(45, 45, 45, 0.3)",
   },
@@ -216,7 +228,7 @@ const styles = StyleSheet.create({
   },
   aspectLabel: {
     fontSize: 12,
-    fontWeight: "500",
+    fontFamily: FontFamily.semibold,
   },
   confirmButton: {
     width: 40,
@@ -227,7 +239,12 @@ const styles = StyleSheet.create({
   },
   confirmLabel: {
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: FontFamily.semibold,
+  },
+  checkIcon: {
+    width: 15,
+    height: 15,
+    tintColor: "white",
   },
   actionButton: {
     paddingHorizontal: 12,
@@ -238,6 +255,6 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 12,
-    fontWeight: "500",
+    fontFamily: FontFamily.semibold,
   },
 });

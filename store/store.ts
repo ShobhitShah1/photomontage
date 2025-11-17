@@ -88,7 +88,7 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       const withZ = layers.map((l, i) => ({ ...l, z: maxZ + i + 1 }));
       return {
         layers: [...s.layers, ...withZ],
-        selectedLayerId: withZ.at(-1)?.id ?? s.selectedLayerId,
+        // selectedLayerId: withZ.at(-1)?.id ?? s.selectedLayerId,
       };
     }),
 

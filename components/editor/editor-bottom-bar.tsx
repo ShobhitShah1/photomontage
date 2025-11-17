@@ -9,6 +9,7 @@ import { Pressable } from "../themed";
 interface EditorBottomBarInterface {
   onUploadPress: () => void;
   images: PickedImage[];
+  selectedLayerId: string | null;
   onImageSelect: (image: PickedImage, index: number) => void;
   onImageDelete?: (image: PickedImage) => void;
 }
@@ -18,6 +19,7 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
   onImageSelect,
   onUploadPress,
   onImageDelete,
+  selectedLayerId,
 }) => {
   const { theme } = useTheme();
 
@@ -61,7 +63,14 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
           return (
             <Pressable
               key={index}
-              style={styles.uploadButton}
+              style={[
+                styles.uploadButton,
+                {
+                  borderWidth: 2,
+                  borderColor:
+                    selectedLayerId === item.id ? theme.primary : "transparent",
+                },
+              ]}
               onPress={() => onImageSelect(item, index)}
               onLongPress={() => handleLongPress(item)}
             >
@@ -91,6 +100,7 @@ const styles = StyleSheet.create({
   uploadButton: {
     width: 58,
     height: 68,
+    // padding: 2,
     borderRadius: 12,
     overflow: "hidden",
     alignItems: "center",

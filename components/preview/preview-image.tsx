@@ -43,8 +43,8 @@ const styles = StyleSheet.create({
   border: {
     width: "100%",
     height: "100%",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    // borderWidth: 2,
+    // borderColor: "#FFFFFF",
     borderRadius: 2,
     overflow: "hidden",
     shadowColor: "#000",
@@ -58,4 +58,3 @@ const styles = StyleSheet.create({
     height: "100%",
   },
 });
-

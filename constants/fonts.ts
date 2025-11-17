@@ -1,26 +1,16 @@
-// Font loading configuration for expo-font
 export const FONT_ASSETS = {
-  // "Galada-Regular": require("../assets/fonts/Galada-Regular.ttf"),
-  // "Mona-Sans-Regular": require("../assets/fonts/Mona-Sans-Regular.ttf"),
-  // "Mona-Sans-Medium": require("../assets/fonts/Mona-Sans-Medium.ttf"),
-  // "Mona-Sans-SemiBold": require("../assets/fonts/Mona-Sans-SemiBold.ttf"),
-  // "Mona-Sans-Bold": require("../assets/fonts/Mona-Sans-Bold.ttf"),
+  "ElmsSans-Bold": require("../assets/fonts/ElmsSans-Bold.ttf"),
+  "ElmsSans-Medium": require("../assets/fonts/ElmsSans-Medium.ttf"),
+  "ElmsSans-Regular": require("../assets/fonts/ElmsSans-Regular.ttf"),
+  "ElmsSans-SemiBold": require("../assets/fonts/ElmsSans-SemiBold.ttf"),
 } as const;
-
-// export const FONT_ASSETS = {
-//   'Biennale-Regular': require('../assets/fonts/Fontspring-DEMO-biennale-regular.otf'),
-//   'Biennale-Medium': require('../assets/fonts/Fontspring-DEMO-biennale-medium.otf'),
-//   'Biennale-SemiBold': require('../assets/fonts/Fontspring-DEMO-biennale-semibold.otf'),
-//   'Biennale-Bold': require('../assets/fonts/Fontspring-DEMO-biennale-bold.otf'),
-// } as const;
 
 // Smart font utilities - use these instead of hardcoding
 export const FontFamily = {
-  regular: "Mona-Sans-Regular",
-  medium: "Mona-Sans-Medium",
-  semibold: "Mona-Sans-SemiBold",
-  bold: "Mona-Sans-Bold",
-  galada: "Galada-Regular",
+  regular: "ElmsSans-Regular",
+  medium: "ElmsSans-Medium",
+  semibold: "ElmsSans-SemiBold",
+  bold: "ElmsSans-Bold",
 } as const;
 
 // Typography helper functions
@@ -40,6 +30,4 @@ export const typography = {
   buttonSmall: { fontFamily: FontFamily.medium, fontSize: 14, lineHeight: 18 },
 
   label: { fontFamily: FontFamily.medium, fontSize: 12, lineHeight: 16 },
-
-  galada: { fontFamily: FontFamily.galada, fontSize: 16, lineHeight: 24 },
 } as const;

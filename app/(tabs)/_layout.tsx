@@ -117,7 +117,7 @@ const TabItem: React.FC<TabItemProps> = memo(
               { color: theme.textPrimary, fontSize: 12.5 },
             ]}
           >
-            {label}
+            {label?.toString()}
           </Text>
         )}
       </Pressable>

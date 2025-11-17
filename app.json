@@ -27,8 +27,8 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-        "android.permission.ACCESS_MEDIA_LOCATION",
-        ],
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
       "blockedPermissions": [
         "com.google.android.gms.permission.AD_ID"
       ]
@@ -36,7 +36,16 @@
     "plugins": [
       "./app.plugin.js",
       "expo-router",
-      ["react-native-bootsplash", { "assetsDir": "assets/bootsplash", "android": { "parentTheme": "EdgeToEdge", "darkContentBarsStyle": false } }],
+      [
+        "react-native-bootsplash",
+        {
+          "assetsDir": "assets/bootsplash",
+          "android": {
+            "parentTheme": "EdgeToEdge",
+            "darkContentBarsStyle": false
+          }
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -81,7 +90,8 @@
           "enableBase64ShareAndroid": true
         }
       ],
-       [ "expo-build-properties",
+      [
+        "expo-build-properties",
         {
           "android": {
             "usesCleartextTraffic": true,
@@ -91,7 +101,8 @@
           },
           "ios": {}
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
