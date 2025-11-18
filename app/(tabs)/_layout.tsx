@@ -114,7 +114,11 @@ const TabItem: React.FC<TabItemProps> = memo(
           <Text
             style={[
               styles.tabLabel,
-              { color: theme.textPrimary, fontSize: 12.5 },
+              {
+                color: theme.textPrimary,
+                fontSize: 12,
+                width: 50,
+              },
             ]}
           >
             {label?.toString()}
