@@ -8,7 +8,7 @@ import {
 import { FontFamily } from "@/constants/fonts";
 import { useTheme } from "@/context/theme-context";
 import { Image } from "expo-image";
-import React, { FC, memo, useCallback, useState } from "react";
+import React, { FC, memo, useCallback } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Pressable } from "../themed";
 
@@ -20,6 +20,7 @@ interface EditorTopBarInterface {
   onShuffle: () => void;
   onComplateEditing: () => void;
   onResizeImage: (aspectRatio: AspectKey) => void;
+  selectedAspect: AspectKey;
   editingActions?: {
     clearPath: () => void;
     toggleEditMode: () => void;
@@ -49,13 +50,12 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
   onUndo,
   editingActions,
   onShuffle,
+  selectedAspect,
 }) => {
   const { theme } = useTheme();
-  const [selectedAspect, setSelectedAspect] = useState<AspectKey>("free");
 
   const handleSelectAspect = useCallback(
     (key: AspectKey) => {
-      setSelectedAspect(key);
       onResizeImage(key);
     },
     [onResizeImage]
@@ -106,7 +106,7 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
       onPress={onPress}
       style={[
         styles.aspectButton,
-        { backgroundColor: theme.buttonBackground },
+        { backgroundColor: "rgba(255, 255, 255, 0.06)" },
         selected && styles.aspectButtonSelected,
       ]}
     >
@@ -144,12 +144,18 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
       </View>
 
       <View style={styles.editRightGroup}>
-        <Pressable
+        <IconButton
+          icon={ic_check}
+          onPress={
+            editingActions?.canApply ? editingActions.applyCrop : () => {}
+          }
+        />
+        {/* <Pressable
           style={[
             styles.confirmButton,
             {
               backgroundColor: theme.buttonBackground,
-              opacity: editingActions?.canApply ? 1 : 0.5,
+              // opacity: editingActions?.canApply ? 1 : 0.5,
             },
           ]}
           onPress={
@@ -162,7 +168,7 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
             style={styles.checkIcon}
             contentFit="contain"
           />
-        </Pressable>
+        </Pressable> */}
       </View>
     </>
   );
@@ -201,12 +207,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   editLeftGroup: {
+    gap: 10,
+    height: 45,
+    flexShrink: 1,
+    borderRadius: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    padding: 5,
-    borderRadius: 10,
-    flexShrink: 1,
     backgroundColor: "rgba(45, 45, 45, 0.3)",
   },
   editRightGroup: {
@@ -215,13 +223,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   aspectButton: {
-    minWidth: 40,
+    minWidth: 44,
     paddingHorizontal: 10,
-    height: 32,
-    borderRadius: 8,
+    height: 28,
+    borderRadius: 5,
     alignItems: "center",
     justifyContent: "center",
-    opacity: 0.7,
   },
   aspectButtonSelected: {
     opacity: 1,

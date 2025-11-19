@@ -10,6 +10,7 @@ import {
   createLayersFromImages,
 } from "@/utiles/editor-utils";
 import type { ImagePickerAsset } from "expo-image-picker";
+import { Alert } from "react-native";
 import { useCallback } from "react";
 
 interface UseEditorImagesOptions {
@@ -41,7 +42,35 @@ export const useEditorImages = (
     (assets: ImagePickerAsset[], source: SelectionSource) => {
       if (assets.length === 0) return;
 
-      const newImages = mapAssetsToImages(assets, source);
+      const MAX_DIMENSION = 6000;
+      const MAX_PIXELS = 24_000_000; // 24 MP
+
+      const oversizedAssets: ImagePickerAsset[] = [];
+      const safeAssets = assets.filter((asset) => {
+        const width = asset.width ?? 0;
+        const height = asset.height ?? 0;
+        if (!width || !height) return true;
+        if (
+          width > MAX_DIMENSION ||
+          height > MAX_DIMENSION ||
+          width * height > MAX_PIXELS
+        ) {
+          oversizedAssets.push(asset);
+          return false;
+        }
+        return true;
+      });
+
+      if (oversizedAssets.length > 0) {
+        Alert.alert(
+          "Image Too Large",
+          "One or more selected images exceed the maximum supported size (24 MP or 6000px in any dimension). Please select a smaller image."
+        );
+      }
+
+      if (safeAssets.length === 0) return;
+
+      const newImages = mapAssetsToImages(safeAssets, source);
       appendImages(newImages);
 
       const newLayers = createLayersFromImages(

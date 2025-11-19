@@ -1,17 +1,23 @@
 import { FontFamily } from "@/constants/fonts";
+import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import Svg, { Path, Rect } from "react-native-svg";
 import type { SelectionSource } from "../../store/selection-store";
-import { colors, radii, spacing } from "../../utiles/tokens";
+import { colors, spacing } from "../../utiles/tokens";
 
 interface ImagePickerModalProps {
   visible: boolean;
@@ -22,23 +28,31 @@ interface ImagePickerModalProps {
   ) => void;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 const LibraryIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff">
+  <Svg
+    width="32"
+    height="32"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={colors.text}
+  >
     <Path
       d="M13 21H3.6C3.26863 21 3 20.7314 3 20.4V3.6C3 3.26863 3.26863 3 3.6 3H13"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <Path
       d="M21 15.6V8.4C21 8.06863 20.7314 7.8 20.4 7.8H13"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <Path
       d="M17.8021 12H13V21H17.8021C19.5681 21 21 19.5681 21 17.8021V15.6C21 13.6118 19.5882 12 17.8021 12Z"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -46,10 +60,16 @@ const LibraryIcon = () => (
 );
 
 const CameraIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff">
+  <Svg
+    width="32"
+    height="32"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={colors.text}
+  >
     <Path
       d="M21 8.5C21.8284 8.5 22.5 9.17157 22.5 10V18C22.5 18.8284 21.8284 19.5 21 19.5H3C2.17157 19.5 1.5 18.8284 1.5 18V10C1.5 9.17157 2.17157 8.5 3 8.5H6.55163C7.14917 8.5 7.71261 8.21389 8.09015 7.72863L9.40985 6.07137C9.78739 5.58611 10.3508 5.3 10.9484 5.3H13.0516C13.6492 5.3 14.2126 5.58611 14.5901 6.07137L15.9099 7.72863C16.2874 8.21389 16.8508 8.5 17.4484 8.5H21Z"
-      strokeWidth="2"
+      strokeWidth="1.5"
     />
     <Rect
       x="9"
@@ -57,7 +77,7 @@ const CameraIcon = () => (
       width="6"
       height="4"
       rx="2"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -71,6 +91,10 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 }) => {
   const [busy, setBusy] = useState(false);
 
+  const handleHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const request = async (permissionRequest: () => Promise<any>) => {
     const { granted } = await permissionRequest();
     if (!granted) return false;
@@ -78,6 +102,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   };
 
   const pickFromLibrary = async () => {
+    handleHaptic();
     setBusy(true);
     try {
       const granted = await request(
@@ -106,6 +131,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   };
 
   const openCamera = async () => {
+    handleHaptic();
     setBusy(true);
     try {
       const granted = await request(ImagePicker.requestCameraPermissionsAsync);
@@ -133,58 +159,52 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
     }
   };
 
+  if (!visible) return null;
+
   return (
     <Modal
       visible={visible}
-      transparent
+      statusBarTranslucent
       animationType="slide"
       onRequestClose={handleClose}
+      backdropColor={"rgba(0,0,0,0.5)"}
     >
-      <Pressable style={styles.backdrop} onPress={handleClose}>
-        <View style={styles.bottomContainer}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
-            <View style={styles.handle} />
-
+      <View style={styles.backdrop}>
+        <Animated.View style={styles.sheetContainer}>
+          <View style={styles.card}>
             <View style={styles.header}>
-              <Text style={styles.title}>Add image</Text>
+              <Text style={styles.title}>Upload Media</Text>
               <Text style={styles.subtitle}>
-                Drop in a photo from your library or capture a new one.
+                Choose how you want to add photos
               </Text>
             </View>
 
-            <View style={styles.tileRow}>
+            <View style={styles.optionsContainer}>
               <ActionTile
                 icon={<LibraryIcon />}
-                title="Photo library"
-                description="Pick one or multiple images."
+                title="Gallery"
                 onPress={pickFromLibrary}
                 disabled={busy}
               />
               <ActionTile
                 icon={<CameraIcon />}
-                title="Use camera"
-                description="Take a quick photo."
+                title="Camera"
                 onPress={openCamera}
                 disabled={busy}
+                delay={100}
               />
             </View>
-
-            {busy && (
-              <View style={styles.loadingOverlay} pointerEvents="none">
-                <ActivityIndicator color={colors.text} size="small" />
-              </View>
-            )}
-          </Pressable>
+          </View>
 
           <Pressable
-            style={styles.cancelButton}
+            style={styles.closeButton}
             onPress={handleClose}
             disabled={busy}
           >
-            <Text style={styles.cancelText}>Close</Text>
+            <Text style={styles.closeButtonText}>Cancel</Text>
           </Pressable>
-        </View>
-      </Pressable>
+        </Animated.View>
+      </View>
     </Modal>
   );
 };
@@ -192,152 +212,139 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 interface ActionTileProps {
   icon: React.ReactNode;
   title: string;
-  description: string;
   onPress: () => void;
   disabled: boolean;
+  delay?: number;
 }
 
 const ActionTile: React.FC<ActionTileProps> = ({
   icon,
   title,
-  description,
   onPress,
   disabled,
 }) => {
+  const scale = useSharedValue(1);
+
+  const rStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1);
+  };
+
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.tile,
-        pressed && !disabled && styles.tilePressed,
-        disabled && styles.tileDisabled,
-      ]}
+    <AnimatedPressable
+      style={[styles.tile, rStyle, disabled && styles.tileDisabled]}
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={disabled}
     >
-      <View style={styles.tileIconContainer}>{icon}</View>
-      <View style={styles.tileTextContainer}>
-        <Text style={styles.tileTitle}>{title}</Text>
-        <Text style={styles.tileDescription}>{description}</Text>
-      </View>
-    </Pressable>
+      {icon}
+      <Text style={styles.tileText}>{title}</Text>
+    </AnimatedPressable>
   );
 };
 
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "flex-end",
   },
-  bottomContainer: {
+  backdropPressable: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  sheetContainer: {
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.sm,
-    gap: spacing.sm,
+    paddingBottom: Platform.OS === "ios" ? 40 : 24,
+    gap: 5,
   },
-  sheet: {
+  card: {
     backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    borderRadius: 24,
+    padding: spacing.lg,
     overflow: "hidden",
-    shadowColor: "rgba(0,0,0,0.9)",
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-  handle: {
-    alignSelf: "center",
-    width: 42,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.22)",
-    marginBottom: spacing.md,
+    borderCurve: "continuous",
   },
   header: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    alignItems: "center",
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: FontFamily.bold,
     color: colors.text,
-    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
-    fontFamily: FontFamily.semibold,
+    fontFamily: FontFamily.medium,
+    textAlign: "center",
   },
-  tileRow: {
+  optionsContainer: {
     flexDirection: "row",
-    marginTop: spacing.sm,
-    gap: 10,
+    gap: spacing.md,
   },
   tile: {
     flex: 1,
-    borderRadius: radii.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    paddingVertical: 15,
+    borderRadius: 16,
     alignItems: "center",
-  },
-  tilePressed: {
-    backgroundColor: colors.overlay,
+    justifyContent: "center",
+    gap: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
   },
   tileDisabled: {
     opacity: 0.5,
   },
-  tileIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    marginRight: spacing.md,
-  },
-  tileTextContainer: {
-    flex: 1,
-  },
-  tileTitle: {
-    color: colors.text,
-    fontSize: 14,
-    fontFamily: FontFamily.bold,
-    marginBottom: 2,
-  },
-  tileDescription: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontFamily: FontFamily.semibold,
-  },
-  cancelButton: {
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.5)",
-    paddingVertical: spacing.md,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "rgba(0,0,0,0.8)",
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+    borderWidth: 1.5,
+    borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
-  cancelText: {
-    color: colors.text,
+  tileText: {
     fontSize: 15,
-    fontFamily: FontFamily.bold,
+    fontFamily: FontFamily.semibold,
+    color: colors.text,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.12)",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 10,
+  },
+  closeButton: {
+    backgroundColor: colors.surface,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+  },
+  closeButtonText: {
+    fontSize: 18,
+    fontFamily: FontFamily.bold,
+    color: colors.text,
   },
 });

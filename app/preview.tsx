@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.border,
@@ -175,12 +175,12 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 20,
     fontFamily: FontFamily.bold,
-    marginBottom: spacing.md,
+    marginBottom: 3,
   },
   emptySubtitle: {
     color: colors.textMuted,
     fontSize: 14,
     textAlign: "center",
-    marginBottom: spacing.xl,
+    marginBottom: 10,
   },
 });

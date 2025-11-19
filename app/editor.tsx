@@ -34,7 +34,6 @@ import { useSelectionStore } from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
 import { ImagePickerModal } from "@/temp/components/image-picker-modal";
 import { useIsFocused } from "@react-navigation/native";
-import * as ImageManipulator from "expo-image-manipulator";
 import { useFocusEffect, useRouter } from "expo-router";
 
 const createLayersFromImages = (
@@ -147,14 +146,12 @@ export default function EditorScreen() {
       canvasSize.height
     );
     addLayers(nextLayers);
-    if (nextLayers.length > 0) selectLayer(nextLayers[0].id);
     hydratedSession.current = sessionId;
   }, [
     sessionId,
     images,
     reset,
     addLayers,
-    selectLayer,
     canvasSize.width,
     canvasSize.height,
   ]);
@@ -224,7 +221,7 @@ export default function EditorScreen() {
   };
 
   const handleCropComplete = useCallback(
-    async (result: {
+    (result: {
       croppedUri: string;
       maskPath: string;
       cropRect: { x: number; y: number; width: number; height: number };
@@ -232,15 +229,8 @@ export default function EditorScreen() {
       if (!selectedLayerId || !selectedLayer) return;
 
       try {
-        const imageInfo = await ImageManipulator.manipulateAsync(
-          result.croppedUri,
-          [],
-          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-        );
-
-        const actualWidth = imageInfo.width || result.cropRect.width;
-        const actualHeight = imageInfo.height || result.cropRect.height;
-
+        const actualWidth = result.cropRect.width;
+        const actualHeight = result.cropRect.height;
         const currentX = selectedLayer.x;
         const currentY = selectedLayer.y;
         const currentWidth = selectedLayer.width;
@@ -268,25 +258,8 @@ export default function EditorScreen() {
         });
         setisDetailEditingEnable(false);
       } catch (error) {
-        console.error("Error getting cropped image dimensions:", error);
-        const newWidth = result.cropRect.width;
-        const newHeight = result.cropRect.height;
-
-        const centerX = selectedLayer.x + selectedLayer.width / 2;
-        const centerY = selectedLayer.y + selectedLayer.height / 2;
-
-        const newX = centerX - newWidth / 2;
-        const newY = centerY - newHeight / 2;
-
-        applyCrop(selectedLayerId, result.croppedUri, result.cropRect);
-        updateLayer(selectedLayerId, {
-          maskPath: result.maskPath,
-          width: newWidth,
-          height: newHeight,
-          x: Math.max(0, newX),
-          y: Math.max(0, newY),
-        });
-        setisDetailEditingEnable(false);
+        console.error("Error applying crop:", error);
+        Alert.alert("Error", "Failed to apply crop. Please try again.");
       } finally {
         selectLayer("");
       }
@@ -406,6 +379,7 @@ export default function EditorScreen() {
         isEditing={isDetailEditingEnable}
         editingActions={editingActions || undefined}
         onShuffle={handelShuffle}
+        selectedAspect={selectedAspectRatio}
       />
 
       <View style={styles.canvasWrapper}>

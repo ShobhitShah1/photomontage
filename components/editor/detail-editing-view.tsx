@@ -1,3 +1,4 @@
+import { CropPreviewWindow } from "@/components/editor/crop-preview-window";
 import { Layer } from "@/store/store";
 import { colors } from "@/utiles/tokens";
 import { Image } from "expo-image";
@@ -10,10 +11,10 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   LayoutChangeEvent,
   StyleSheet,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS, useSharedValue } from "react-native-reanimated";
@@ -50,12 +51,15 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
   aspectRatio = "free",
   onActionsReady,
 }) => {
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const [container, setContainer] = useState({ width: 0, height: 0 });
+  const [container, setContainer] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [displaySize, setDisplaySize] = useState({ width: 0, height: 0 });
   const [displayOffset, setDisplayOffset] = useState({ x: 0, y: 0 });
   const [isReady, setIsReady] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
   const [path, setPath] = useState<Point[]>([]);
   const [editMode, setEditMode] = useState(false);
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(
@@ -74,9 +78,30 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
   const isEditingCropped = !!layer.croppedUri;
 
   useEffect(() => {
-    if (!uri) return;
+    if (!uri) {
+      setIsImageLoading(false);
+      return;
+    }
 
-    const loadImage = async () => {
+    setIsImageLoading(true);
+    let cancelled = false;
+
+    const applySize = (width: number, height: number) => {
+      if (cancelled) return;
+      setImageSize({ width, height });
+      setIsImageLoading(false);
+    };
+
+    const fallbackSize = () => {
+      if (cancelled) return;
+      if (isEditingCropped && layer.cropRect) {
+        applySize(layer.cropRect.width, layer.cropRect.height);
+      } else {
+        applySize(layer.width, layer.height);
+      }
+    };
+
+    const fetchSize = async () => {
       try {
         const imageInfo = await ImageManipulator.manipulateAsync(uri, [], {
           compress: 1,
@@ -84,44 +109,37 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
         });
 
         if (imageInfo?.width && imageInfo?.height) {
-          setImageSize({ width: imageInfo.width, height: imageInfo.height });
-        } else if (isEditingCropped && layer.cropRect) {
-          setImageSize({
-            width: layer.cropRect.width,
-            height: layer.cropRect.height,
-          });
-        } else {
-          setImageSize({ width: layer.width, height: layer.height });
+          applySize(imageInfo.width, imageInfo.height);
+          return;
         }
+        fallbackSize();
       } catch (error) {
-        if (isEditingCropped && layer.cropRect) {
-          setImageSize({
-            width: layer.cropRect.width,
-            height: layer.cropRect.height,
-          });
-        } else {
-          setImageSize({ width: layer.width, height: layer.height });
-        }
+        fallbackSize();
       }
     };
 
-    loadImage();
+    fetchSize();
+
+    return () => {
+      cancelled = true;
+    };
   }, [uri, layer.width, layer.height, isEditingCropped, layer.cropRect]);
 
   useEffect(() => {
-    if (!uri || imageSize.width === 0 || imageSize.height === 0) {
+    if (
+      !uri ||
+      imageSize.width === 0 ||
+      imageSize.height === 0 ||
+      !container ||
+      container.width === 0 ||
+      container.height === 0
+    ) {
       setIsReady(false);
       return;
     }
 
-    const containerWidth = container.width > 0 ? container.width : screenWidth;
-    const containerHeight =
-      container.height > 0 ? container.height : screenHeight;
-
-    if (containerWidth === 0 || containerHeight === 0) {
-      setIsReady(false);
-      return;
-    }
+    const containerWidth = container.width;
+    const containerHeight = container.height;
 
     const imageAspect = imageSize.width / imageSize.height;
     const containerAspect = containerWidth / containerHeight;
@@ -157,15 +175,7 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
     displayOffsetY.value = offsetY;
     isReadyShared.value = true;
     setIsReady(true);
-  }, [
-    uri,
-    imageSize.width,
-    imageSize.height,
-    container.width,
-    container.height,
-    screenWidth,
-    screenHeight,
-  ]);
+  }, [uri, imageSize.width, imageSize.height, container]);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -643,13 +653,21 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
 
   const displayPath = useMemo(() => {
     if (path.length === 0) return "";
-    return buildPathString(path, false);
-  }, [path, buildPathString]);
+    const shouldClose = aspectRatio !== "free" && path.length >= 4;
+    return buildPathString(path, shouldClose);
+  }, [path, aspectRatio, buildPathString]);
+
+  const showLoader = !isReady || isImageLoading;
 
   return (
     <View style={styles.container} onLayout={onLayout}>
       <GestureDetector gesture={editMode ? pointEditGesture : panGesture}>
         <View style={styles.content}>
+          {showLoader && (
+            <View style={styles.loader}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          )}
           {isReady && uri && (
             <>
               <View
@@ -668,6 +686,8 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
                   source={{ uri }}
                   style={styles.image}
                   contentFit="contain"
+                  onLoadEnd={() => setIsImageLoading(false)}
+                  onError={() => setIsImageLoading(false)}
                 />
               </View>
 
@@ -718,6 +738,13 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
           )}
         </View>
       </GestureDetector>
+      <CropPreviewWindow
+        uri={uri}
+        path={path}
+        displaySize={displaySize}
+        aspectRatio={aspectRatio}
+        visible={isReady && !!uri && path.length > 0}
+      />
     </View>
   );
 };
@@ -739,5 +766,15 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: "absolute",
+  },
+  loader: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
   },
 });
