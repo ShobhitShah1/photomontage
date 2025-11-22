@@ -1,6 +1,8 @@
 import { ic_upload } from "@/assets/icons";
+import { MiniCanvasPreview } from "@/components/canvas/mini-canvas-preview";
 import { useTheme } from "@/context/theme-context";
 import { PickedImage } from "@/store/selection-store";
+import { Layer } from "@/store/store";
 import { Image } from "expo-image";
 import React, { FC, memo } from "react";
 import { Alert, FlatList, StyleSheet, View } from "react-native";
@@ -12,6 +14,9 @@ interface EditorBottomBarInterface {
   selectedLayerId: string | null;
   onImageSelect: (image: PickedImage, index: number) => void;
   onImageDelete?: (image: PickedImage) => void;
+  canvasLayers?: Layer[];
+  canvasWidth?: number;
+  canvasHeight?: number;
 }
 
 const EditorBottomBar: FC<EditorBottomBarInterface> = ({
@@ -20,12 +25,14 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
   onUploadPress,
   onImageDelete,
   selectedLayerId,
+  canvasLayers = [],
+  canvasWidth = 640,
+  canvasHeight = 640,
 }) => {
   const { theme } = useTheme();
 
   const handleLongPress = (item: PickedImage) => {
     if (!onImageDelete) return;
-
     Alert.alert("Delete Image", "Are you sure you want to delete this image?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -35,6 +42,13 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
       },
     ]);
   };
+
+  const showCanvasPreview =
+    canvasLayers.length > 0 && canvasWidth > 0 && canvasHeight > 0;
+
+  const placedLayers = canvasLayers.filter(
+    (layer) => layer.croppedUri && layer.maskPath
+  );
 
   return (
     <View style={styles.container}>
@@ -52,6 +66,25 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
           contentFit="contain"
         />
       </Pressable>
+
+      {showCanvasPreview && placedLayers.length > 0 && (
+        <View
+          style={[
+            styles.canvasPreviewButton,
+            { backgroundColor: theme.buttonBackground },
+          ]}
+        >
+          <MiniCanvasPreview
+            layers={placedLayers}
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            previewWidth={54}
+            previewHeight={64}
+            showBorder={false}
+            borderColor="transparent"
+          />
+        </View>
+      )}
 
       <FlatList
         data={images}
@@ -95,12 +128,21 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 10,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    alignItems: "center",
+  },
+  canvasPreviewButton: {
+    width: 58,
+    height: 68,
+    borderRadius: 12,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 2,
   },
   uploadButton: {
     width: 58,
     height: 68,
-    // padding: 2,
     borderRadius: 12,
     overflow: "hidden",
     alignItems: "center",
@@ -117,5 +159,7 @@ const styles = StyleSheet.create({
   columnWrapperStyle: {
     gap: 5,
   },
-  flatListStyle: {},
+  flatListStyle: {
+    flexGrow: 0,
+  },
 });

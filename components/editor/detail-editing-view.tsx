@@ -1,4 +1,3 @@
-import { CropPreviewWindow } from "@/components/editor/crop-preview-window";
 import { Layer } from "@/store/store";
 import { colors } from "@/utiles/tokens";
 import { Image } from "expo-image";
@@ -738,13 +737,6 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
           )}
         </View>
       </GestureDetector>
-      <CropPreviewWindow
-        uri={uri}
-        path={path}
-        displaySize={displaySize}
-        aspectRatio={aspectRatio}
-        visible={isReady && !!uri && path.length > 0}
-      />
     </View>
   );
 };

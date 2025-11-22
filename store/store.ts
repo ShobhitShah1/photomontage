@@ -44,11 +44,6 @@ type Actions = {
   setCanvas: (partial: Partial<EditorState["canvas"]>) => void;
   toggleGrid: () => void;
   setGridSize: (n: number) => void;
-  applyCrop: (
-    id: string,
-    croppedUri: string,
-    cropRect: NonNullable<Layer["cropRect"]>
-  ) => void;
   randomizeLayers: () => void;
   undo: () => void;
   redo: () => void;
@@ -88,15 +83,30 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       const withZ = layers.map((l, i) => ({ ...l, z: maxZ + i + 1 }));
       return {
         layers: [...s.layers, ...withZ],
-        // selectedLayerId: withZ.at(-1)?.id ?? s.selectedLayerId,
       };
     }),
 
   updateLayer: (id, partial) =>
     set((s) => {
+      if (partial.width !== undefined && partial.width <= 0) {
+        console.error("Invalid width:", partial.width);
+        return {};
+      }
+      if (partial.height !== undefined && partial.height <= 0) {
+        console.error("Invalid height:", partial.height);
+        return {};
+      }
+
       pushHistory(s);
+
+      const updatedLayers = s.layers.map((l) =>
+        l.id === id ? { ...l, ...partial } : l
+      );
+
+      // console.log("Updated layers:", updatedLayers);
+
       return {
-        layers: s.layers.map((l) => (l.id === id ? { ...l, ...partial } : l)),
+        layers: updatedLayers,
       };
     }),
 
@@ -123,16 +133,6 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
   toggleGrid: () => set((s) => ({ ui: { ...s.ui, grid: !s.ui.grid } })),
 
   setGridSize: (n) => set((s) => ({ ui: { ...s.ui, gridSize: n } })),
-
-  applyCrop: (id, croppedUri, cropRect) =>
-    set((s) => {
-      pushHistory(s);
-      return {
-        layers: s.layers.map((l) =>
-          l.id === id ? { ...l, croppedUri, cropRect } : l
-        ),
-      };
-    }),
 
   randomizeLayers: () =>
     set((s) => {

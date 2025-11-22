@@ -1,3 +1,4 @@
+import { createLayersFromImages } from "@/app/editor";
 import type { SelectionSource } from "@/store/selection-store";
 import {
   mapAssetsToImages,
@@ -5,13 +6,10 @@ import {
   type PickedImage,
 } from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
-import {
-  assignZIndexToLayers,
-  createLayersFromImages,
-} from "@/utiles/editor-utils";
+import { assignZIndexToLayers } from "@/utiles/editor-utils";
 import type { ImagePickerAsset } from "expo-image-picker";
-import { Alert } from "react-native";
 import { useCallback } from "react";
+import { Alert } from "react-native";
 
 interface UseEditorImagesOptions {
   canvasWidth: number;
@@ -44,12 +42,20 @@ export const useEditorImages = (
 
       const MAX_DIMENSION = 6000;
       const MAX_PIXELS = 24_000_000; // 24 MP
-
       const oversizedAssets: ImagePickerAsset[] = [];
+
       const safeAssets = assets.filter((asset) => {
         const width = asset.width ?? 0;
         const height = asset.height ?? 0;
-        if (!width || !height) return true;
+
+        if (!width || !height || width <= 0 || height <= 0) {
+          console.error("Asset has invalid dimensions:", asset.uri, {
+            width,
+            height,
+          });
+          return false;
+        }
+
         if (
           width > MAX_DIMENSION ||
           height > MAX_DIMENSION ||
@@ -68,7 +74,15 @@ export const useEditorImages = (
         );
       }
 
-      if (safeAssets.length === 0) return;
+      if (safeAssets.length === 0) {
+        if (assets.length > 0 && oversizedAssets.length === 0) {
+          Alert.alert(
+            "Invalid Images",
+            "Selected images have invalid dimensions. Please try different images."
+          );
+        }
+        return;
+      }
 
       const newImages = mapAssetsToImages(safeAssets, source);
       appendImages(newImages);
@@ -79,12 +93,55 @@ export const useEditorImages = (
         canvasHeight
       );
 
-      const layersWithZ = assignZIndexToLayers(newLayers, layers);
+      const validLayers = newLayers.filter((layer) => {
+        const isValid =
+          layer.width > 0 &&
+          layer.height > 0 &&
+          Number.isFinite(layer.width) &&
+          Number.isFinite(layer.height) &&
+          Number.isFinite(layer.x) &&
+          Number.isFinite(layer.y);
 
-      addLayers(layersWithZ);
-      if (layersWithZ.length > 0) {
-        selectLayer(layersWithZ[0].id);
-        setActive(layersWithZ[0].id);
+        if (!isValid) {
+          console.error("Layer has invalid dimensions:", {
+            id: layer.id,
+            width: layer.width,
+            height: layer.height,
+            x: layer.x,
+            y: layer.y,
+          });
+        }
+
+        return isValid;
+      });
+
+      if (validLayers.length === 0) {
+        Alert.alert(
+          "Error",
+          "Failed to create layers from images. Please try again."
+        );
+        return;
+      }
+
+      const layersWithZ = assignZIndexToLayers(validLayers, layers);
+
+      const finalValidLayers = layersWithZ.filter(
+        (layer) =>
+          layer.width > 0 &&
+          layer.height > 0 &&
+          Number.isFinite(layer.width) &&
+          Number.isFinite(layer.height)
+      );
+
+      if (finalValidLayers.length > 0) {
+        addLayers(finalValidLayers);
+        selectLayer(finalValidLayers[0].id);
+        setActive(finalValidLayers[0].id);
+      } else {
+        Alert.alert(
+          "Error",
+          "Could not add images to canvas. Please try again."
+        );
       }
     },
     [
