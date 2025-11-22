@@ -1,50 +1,95 @@
-# Welcome to your Expo app 👋
+# Photomontage
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A powerful, modern, and feature-rich image editing application built with React Native and Expo. This app provides a seamless experience for editing photos, managing galleries, and viewing stories, all wrapped in a beautiful and responsive interface.
 
-## Get started
+## Overview
 
-1. Install dependencies
+Photomontage is designed to be a complete solution for mobile image manipulation. Whether you're looking to crop, filter, draw, or simply organize your photo collection, this app delivers high-performance tools with a user-friendly design. It leverages the latest React Native technologies for smooth animations and efficient state management.
 
-   ```bash
-   npm install
-   ```
+## Key Features
 
-2. Start the app
+### Advanced Image Editor
+- **Precision Editing**: Fine-tune your images with detailed control (`detail-editing-view`).
+- **Interactive Canvas**: Draw and annotate directly on your photos.
+- **Crop & Rotate**: Essential tools for framing your shots perfectly.
+- **Filters & Adjustments**: Enhance your images with professional-grade processing.
+- **Draggable Preview**: Intuitive UI for comparing changes.
 
-   ```bash
-   npx expo start
-   ```
+### Gallery Management
+- **Smart Organization**: Browse your device's media library with ease.
+- **Fast Loading**: Optimized for handling large collections of photos.
+- **Seamless Navigation**: Smooth transitions between grid views and full-screen previews.
 
-In the output, you'll find options to open the app in a
+### Story Viewer
+- **Immersive Experience**: View images in a story format, similar to popular social media platforms.
+- **Interactive Elements**: Swipe, tap, and interact with story content.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Export & Share
+- **High-Quality Export**: Save your masterpieces with customizable quality settings (`quality-selection-modal`).
+- **Instant Sharing**: Share directly to social media or other apps (`share-image-modal`).
+- **Download Options**: Save locally to your device with a single tap.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Modern UI/UX
+- **Dark/Light Mode**: Themed interface support.
+- **Smooth Animations**: Powered by `react-native-reanimated` and `lottie-react-native`.
+- **Gesture Controls**: Intuitive gestures for zooming, panning, and navigating.
 
-## Get a fresh project
+## Tech Stack
 
-When you're ready, run:
+This project is built using a modern and robust technology stack:
 
-```bash
-npm run reset-project
+- **Framework**: [React Native](https://reactnative.dev/) & [Expo SDK 54](https://expo.dev/)
+- **Navigation**: [Expo Router](https://docs.expo.dev/router/introduction/) (File-based routing)
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+- **Animations**: [Reanimated](https://docs.swmansion.com/react-native-reanimated/) & [Lottie](https://github.com/lottie-react-native/lottie-react-native)
+- **Storage**: [React Native MMKV](https://github.com/mimecorg/react-native-mmkv-storage)
+- **Image Handling**: 
+  - `expo-image` for high-performance rendering
+  - `expo-image-manipulator` for editing
+  - `expo-media-library` for file access
+- **UI Components**: `react-native-svg`, `@expo/vector-icons`
+
+## Project Structure
+
+The project follows a clean and scalable structure:
+
+```
+/app
+  ├── (tabs)          # Main tab navigation (Gallery, Settings, etc.)
+  ├── editor.tsx      # Main editor screen
+  ├── gallery-view.tsx # Full-screen image viewer
+  └── ...             # Other screens and routes
+
+/components
+  ├── editor/         # Editor-specific components (Top/Bottom bars, tools)
+  ├── canvas/         # Drawing and canvas tools
+  ├── preview/        # Preview components
+  └── ...             # Shared UI components (Modals, Icons, etc.)
+
+/store                # Zustand stores for global state
+/hooks                # Custom React hooks
+/services             # Utility services and helpers
+/constants            # App constants and theme configurations
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Getting Started
 
-## Learn more
+Follow these steps to run the project locally:
 
-To learn more about developing your project with Expo, look at the following resources:
+1.  **Clone the repository**
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+3.  **Start the development server**:
+    ```bash
+    npx expo start
+    ```
+4.  **Run on device/emulator**:
+    - Scan the QR code with the **Expo Go** app (Android/iOS).
+    - Press `a` for Android Emulator.
+    - Press `i` for iOS Simulator.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+*Built with Expo and React Native.*

@@ -22,23 +22,19 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
   showBorder = true,
   borderColor = "#fff",
 }) => {
-  // Calculate scale to fit canvas in preview
-  const scale = useMemo(() => {
+   const scale = useMemo(() => {
     const scaleX = previewWidth / canvasWidth;
     const scaleY = previewHeight / canvasHeight;
     return Math.min(scaleX, scaleY);
   }, [canvasWidth, canvasHeight, previewWidth, previewHeight]);
 
-  // Scaled canvas dimensions
   const scaledWidth = canvasWidth * scale;
   const scaledHeight = canvasHeight * scale;
 
-  // Center offset
-  const offsetX = (previewWidth - scaledWidth) / 2;
-  const offsetY = (previewHeight - scaledHeight) / 2;
+  const offsetX = (previewWidth - canvasWidth) / 2;
+  const offsetY = (previewHeight - canvasHeight) / 2;
 
-  // Filter only placed/cropped layers
-  const visibleLayers = useMemo(() => {
+   const visibleLayers = useMemo(() => {
     return [...layers]
       .filter((layer) => layer.croppedUri && layer.maskPath)
       .sort((a, b) => (a.z || 0) - (b.z || 0));
@@ -56,8 +52,7 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
         },
       ]}
     >
-      {/* Canvas container scaled down */}
-      <View
+       <View
         style={{
           position: "absolute",
           left: offsetX,
@@ -65,13 +60,11 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
           width: canvasWidth,
           height: canvasHeight,
           transform: [{ scale: scale }],
-          transformOrigin: "0 0",
+
         }}
       >
         {visibleLayers.map((layer) => {
           const clipId = `clip-mini-${layer.id}`;
-          const originX = (layer.width || 0) / 2;
-          const originY = (layer.height || 0) / 2;
 
           return (
             <View
@@ -84,12 +77,8 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
                 height: layer.height || 0,
                 zIndex: layer.z || 0,
                 transform: [
-                  { translateX: originX },
-                  { translateY: originY },
+                  { rotate: `${layer.rotation || 0}deg` },
                   { scale: layer.scale || 1 },
-                  { rotate: `${layer.rotation || 0}rad` },
-                  { translateX: -originX },
-                  { translateY: -originY },
                 ],
               }}
             >
@@ -123,7 +112,7 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
     borderRadius: 8,
     overflow: "hidden",
     position: "relative",
