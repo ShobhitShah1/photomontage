@@ -1,95 +1,52 @@
-# Photomontage
+# PhotoMontage Editor
 
-A powerful, modern, and feature-rich image editing application built with React Native and Expo. This app provides a seamless experience for editing photos, managing galleries, and viewing stories, all wrapped in a beautiful and responsive interface.
+A powerful and intuitive React Native application for creating photo montages and editing images. Built with Expo, it offers a seamless experience for selecting, arranging, and manipulating images on a canvas.
 
-## Overview
+## 📚 Documentation
 
-Photomontage is designed to be a complete solution for mobile image manipulation. Whether you're looking to crop, filter, draw, or simply organize your photo collection, this app delivers high-performance tools with a user-friendly design. It leverages the latest React Native technologies for smooth animations and efficient state management.
+For a detailed technical overview of the codebase, including architecture, state management, and component structure, please refer to [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## Key Features
+## ✨ Features
 
-### Advanced Image Editor
-- **Precision Editing**: Fine-tune your images with detailed control (`detail-editing-view`).
-- **Interactive Canvas**: Draw and annotate directly on your photos.
-- **Crop & Rotate**: Essential tools for framing your shots perfectly.
-- **Filters & Adjustments**: Enhance your images with professional-grade processing.
-- **Draggable Preview**: Intuitive UI for comparing changes.
+- **Multi-Image Selection**: Pick multiple images from your library or camera.
+- **Canvas Manipulation**: Freely scale, rotate, and move images using intuitive gestures.
+- **Advanced Cropping**:
+  - Freeform cropping (draw your own shape).
+  - Standard aspect ratios (1:1, 4:3, 16:9, etc.).
+- **Layer Management**: Reorder layers, bring to front/back.
+- **High-Quality Export**: Save your creations in various qualities.
+- **Undo/Redo**: Full history support for all your edits.
 
-### Gallery Management
-- **Smart Organization**: Browse your device's media library with ease.
-- **Fast Loading**: Optimized for handling large collections of photos.
-- **Seamless Navigation**: Smooth transitions between grid views and full-screen previews.
+## 🚀 Getting Started
 
-### Story Viewer
-- **Immersive Experience**: View images in a story format, similar to popular social media platforms.
-- **Interactive Elements**: Swipe, tap, and interact with story content.
-
-### Export & Share
-- **High-Quality Export**: Save your masterpieces with customizable quality settings (`quality-selection-modal`).
-- **Instant Sharing**: Share directly to social media or other apps (`share-image-modal`).
-- **Download Options**: Save locally to your device with a single tap.
-
-### Modern UI/UX
-- **Dark/Light Mode**: Themed interface support.
-- **Smooth Animations**: Powered by `react-native-reanimated` and `lottie-react-native`.
-- **Gesture Controls**: Intuitive gestures for zooming, panning, and navigating.
-
-## Tech Stack
-
-This project is built using a modern and robust technology stack:
-
-- **Framework**: [React Native](https://reactnative.dev/) & [Expo SDK 54](https://expo.dev/)
-- **Navigation**: [Expo Router](https://docs.expo.dev/router/introduction/) (File-based routing)
-- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
-- **Animations**: [Reanimated](https://docs.swmansion.com/react-native-reanimated/) & [Lottie](https://github.com/lottie-react-native/lottie-react-native)
-- **Storage**: [React Native MMKV](https://github.com/mimecorg/react-native-mmkv-storage)
-- **Image Handling**: 
-  - `expo-image` for high-performance rendering
-  - `expo-image-manipulator` for editing
-  - `expo-media-library` for file access
-- **UI Components**: `react-native-svg`, `@expo/vector-icons`
-
-## Project Structure
-
-The project follows a clean and scalable structure:
-
-```
-/app
-  ├── (tabs)          # Main tab navigation (Gallery, Settings, etc.)
-  ├── editor.tsx      # Main editor screen
-  ├── gallery-view.tsx # Full-screen image viewer
-  └── ...             # Other screens and routes
-
-/components
-  ├── editor/         # Editor-specific components (Top/Bottom bars, tools)
-  ├── canvas/         # Drawing and canvas tools
-  ├── preview/        # Preview components
-  └── ...             # Shared UI components (Modals, Icons, etc.)
-
-/store                # Zustand stores for global state
-/hooks                # Custom React hooks
-/services             # Utility services and helpers
-/constants            # App constants and theme configurations
-```
-
-## Getting Started
-
-Follow these steps to run the project locally:
-
-1.  **Clone the repository**
-2.  **Install dependencies**:
+1.  **Install dependencies**:
     ```bash
     npm install
+    # or
+    yarn install
     ```
-3.  **Start the development server**:
+
+2.  **Start the app**:
     ```bash
     npx expo start
     ```
-4.  **Run on device/emulator**:
-    - Scan the QR code with the **Expo Go** app (Android/iOS).
-    - Press `a` for Android Emulator.
-    - Press `i` for iOS Simulator.
 
----
+3.  **Run on device/emulator**:
+    - Press `a` for Android.
+    - Press `i` for iOS.
+    - Scan the QR code with Expo Go.
 
-*Built with Expo and React Native.*
+## 🛠 Tech Stack
+
+- **Expo** & **React Native**
+- **TypeScript**
+- **Zustand** (State Management)
+- **Reanimated** (Animations)
+- **Gesture Handler** (Interactions)
+
+## Project Structure
+
+- **`app/`**: Application screens and routing.
+- **`components/`**: Reusable UI components.
+- **`store/`**: State management (Zustand).
+- **`hooks/`**: Custom React hooks.
