@@ -21,6 +21,8 @@ interface EditorTopBarInterface {
   onComplateEditing: () => void;
   onResizeImage: (aspectRatio: AspectKey) => void;
   selectedAspect: AspectKey;
+  onBringToFront?: () => void;
+  onSendToBack?: () => void;
   editingActions?: {
     clearPath: () => void;
     toggleEditMode: () => void;
@@ -51,6 +53,8 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
   editingActions,
   onShuffle,
   selectedAspect,
+  onBringToFront,
+  onSendToBack,
 }) => {
   const { theme } = useTheme();
 

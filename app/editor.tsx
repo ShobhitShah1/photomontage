@@ -239,6 +239,8 @@ export default function EditorScreen() {
     redo,
     reset,
     randomizeLayers: shuffle,
+    bringToFront,
+    sendToBack,
   } = useEditorStore();
 
   const { handleImagePicked, handleImageDelete } = useEditorImages({
@@ -479,6 +481,14 @@ export default function EditorScreen() {
     [handleCropCancel]
   );
 
+  const handleBringToFront = useCallback(() => {
+    if (selectedLayerId) bringToFront(selectedLayerId);
+  }, [selectedLayerId, bringToFront]);
+
+  const handleSendToBack = useCallback(() => {
+    if (selectedLayerId) sendToBack(selectedLayerId);
+  }, [selectedLayerId, sendToBack]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
@@ -492,6 +502,8 @@ export default function EditorScreen() {
           editingActions={editingActions || undefined}
           onShuffle={handelShuffle}
           selectedAspect={selectedAspectRatio}
+          onBringToFront={handleBringToFront}
+          onSendToBack={handleSendToBack}
         />
 
         <View style={styles.canvasWrapper}>
@@ -516,9 +528,11 @@ export default function EditorScreen() {
                   key={layer.id}
                   layer={layer}
                   onRequestCrop={() => {}}
-                  onSelect={() => {}}
-                  isSelected={false}
+                  onSelect={() => handleSelectLayer(layer.id)}
+                  isSelected={selectedLayerId === layer.id}
                   onChange={(next) => updateLayer(layer.id, next)}
+                  onBringToFront={bringToFront}
+                  onSendToBack={sendToBack}
                 />
               ))
             )}
@@ -558,6 +572,10 @@ export default function EditorScreen() {
             }
             handleSelectLayer(image.id);
             setisDetailEditingEnable(true);
+          }}
+          onEditingPreviewPress={() => {
+            setisDetailEditingEnable(false);
+            handleSelectLayer(""); 
           }}
           onImageDelete={handleImageDelete}
           onUploadPress={() => setPickerVisible(true)}

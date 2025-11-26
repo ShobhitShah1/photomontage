@@ -48,6 +48,8 @@ type Actions = {
   undo: () => void;
   redo: () => void;
   reset: () => void;
+  bringToFront: (id: string) => void;
+  sendToBack: (id: string) => void;
 };
 
 const snapshot = (s: EditorState): Omit<EditorState, "history"> => ({
@@ -75,6 +77,28 @@ const createInitialEditorState = (): EditorState => ({
 
 export const useEditorStore = create<EditorState & Actions>((set, get) => ({
   ...createInitialEditorState(),
+
+  bringToFront: (id) =>
+    set((s) => {
+      pushHistory(s);
+      const maxZ = s.layers.reduce((m, l) => Math.max(m, l.z), 0);
+      return {
+        layers: s.layers.map((l) =>
+          l.id === id ? { ...l, z: maxZ + 1 } : l
+        ),
+      };
+    }),
+
+  sendToBack: (id) =>
+    set((s) => {
+      pushHistory(s);
+      const minZ = s.layers.reduce((m, l) => Math.min(m, l.z), 0);
+      return {
+        layers: s.layers.map((l) =>
+          l.id === id ? { ...l, z: minZ - 1 } : l
+        ),
+      };
+    }),
 
   addLayers: (layers) =>
     set((s) => {

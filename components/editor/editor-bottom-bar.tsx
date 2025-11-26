@@ -17,6 +17,7 @@ interface EditorBottomBarInterface {
   canvasLayers?: Layer[];
   canvasWidth?: number;
   canvasHeight?: number;
+  onEditingPreviewPress?: () => void;
 }
 
 const EditorBottomBar: FC<EditorBottomBarInterface> = ({
@@ -28,7 +29,8 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
   canvasLayers = [],
   canvasWidth = 640,
   canvasHeight = 640,
-}) => {
+  onEditingPreviewPress
+  }) => {
   const { theme } = useTheme();
 
   const handleLongPress = (item: PickedImage) => {
@@ -68,7 +70,8 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
       </Pressable>
 
       {showCanvasPreview && placedLayers.length > 0 && (
-        <View
+        <Pressable
+          onPress={onEditingPreviewPress}
           style={[
             styles.canvasPreviewButton,
             { backgroundColor: theme.buttonBackground },
@@ -83,7 +86,7 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
             showBorder={false}
             borderColor="transparent"
           />
-        </View>
+        </Pressable>
       )}
 
       <FlatList

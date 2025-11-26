@@ -73,8 +73,8 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
   const displayOffsetY = useSharedValue(0);
   const isReadyShared = useSharedValue(false);
 
-  const uri = layer.croppedUri || layer.originalUri;
-  const isEditingCropped = !!layer.croppedUri;
+  const uri = layer.originalUri;
+  const isEditingCropped = false;
 
   useEffect(() => {
     if (!uri) {
@@ -592,10 +592,10 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
     path.length,
     isReady,
     editMode,
-    onActionsReady,
-    clearPath,
-    toggleEditMode,
-    handleComplete,
+    // onActionsReady, // Remove stable function from deps to be safe, though useState setter is stable.
+    // clearPath,
+    // toggleEditMode,
+    // handleComplete,
   ]);
 
   useEffect(() => {

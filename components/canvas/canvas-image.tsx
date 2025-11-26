@@ -1,9 +1,9 @@
-import colors from "@/constants/colors";
 import { useTransformGesture } from "@/hooks/use-transform-gesture";
 import { Layer } from "@/store/store";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useEffect, useMemo } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import Svg, { ClipPath, Defs, Path, Image as SvgImage } from "react-native-svg";
@@ -15,6 +15,8 @@ interface CanvasImageProps {
   onSelect: (id: string) => void;
   onChange: (l: Layer) => void;
   onRequestCrop?: (id: string) => void;
+  onBringToFront?: (id: string) => void;
+  onSendToBack?: (id: string) => void;
 }
 
 export const CanvasImage: React.FC<CanvasImageProps> = ({
@@ -23,6 +25,8 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
   onSelect,
   onChange,
   onRequestCrop,
+  onBringToFront,
+  onSendToBack,
 }) => {
   const { gesture, animatedStyle, sync } = useTransformGesture({
     x: layer.x,
@@ -83,6 +87,41 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
           animatedStyle,
         ]}
       >
+        {isSelected && (
+          <View style={styles.controlsContainer}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.controlButton,
+                pressed && styles.controlButtonPressed,
+              ]}
+              onPress={() => {
+                if (onBringToFront) onBringToFront(layer.id);
+              }}
+            >
+              <MaterialCommunityIcons
+                name="arrange-bring-forward"
+                size={28}
+                color="white"
+              />
+            </Pressable>
+            <View style={styles.divider} />
+            <Pressable
+              style={({ pressed }) => [
+                styles.controlButton,
+                pressed && styles.controlButtonPressed,
+              ]}
+              onPress={() => {
+                if (onSendToBack) onSendToBack(layer.id);
+              }}
+            >
+              <MaterialCommunityIcons
+                name="arrange-send-backward"
+                size={28}
+                color="white"
+              />
+            </Pressable>
+          </View>
+        )}
         {hasMask ? (
           <View
             style={[
@@ -116,7 +155,7 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
                 <Path
                   d={scaledMaskPath}
                   fill="none"
-                  stroke={colors.dark.primary}
+                  stroke="white"
                   strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -152,7 +191,7 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
                   StyleSheet.absoluteFill,
                   {
                     borderWidth: 2,
-                    borderColor: colors.dark.primary,
+                    borderColor: "white",
                     borderRadius: isCropped ? 0 : 8,
                     pointerEvents: "none",
                   },
@@ -169,5 +208,47 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
 const styles = StyleSheet.create({
   maskedContainer: {
     overflow: "hidden",
+  },
+  controlsContainer: {
+    position: "absolute",
+    top: -70,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    zIndex: 99999,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    borderRadius: 28,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 10,
+    height: 56,
+  },
+  controlButton: {
+    padding: 12,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 52,
+    height: 52,
+  },
+  controlButtonPressed: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    transform: [{ scale: 0.95 }],
+  },
+  divider: {
+    width: 2,
+    height: 32,
+    backgroundColor: "rgba(255,255,255,0.3)",
+  },
+  controlText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });
