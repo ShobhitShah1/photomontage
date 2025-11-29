@@ -287,10 +287,16 @@ export default function EditorScreen() {
 
   const handleSelectLayer = useCallback(
     (id: string | null) => {
+      if (id === selectedLayerId) {
+        selectLayer(null);
+        setActive(null);
+        return;
+      }
+
       selectLayer(id);
       setActive(id);
     },
-    [selectLayer, setActive]
+    [selectLayer, setActive, selectedLayerId]
   );
 
   const selectedLayer = useMemo(
@@ -366,14 +372,32 @@ export default function EditorScreen() {
           return;
         }
 
-        const currentX = selectedLayer.x || 0;
-        const currentY = selectedLayer.y || 0;
-        const currentWidth = selectedLayer.width;
-        const currentHeight = selectedLayer.height;
-        const centerX = currentX + currentWidth / 2;
-        const centerY = currentY + currentHeight / 2;
-        const newX = centerX - actualWidth / 2;
-        const newY = centerY - actualHeight / 2;
+        // Calculate center position based on canvas dimensions
+        // This ensures the cropped image is always centered on screen
+        const newX = (canvasSize.width - actualWidth) / 2;
+        const newY = (canvasSize.height - actualHeight) / 2;
+
+        // Ensure the image stays visible on screen
+        // If image is larger than canvas, center it so it overhangs equally on both sides
+        // If image is smaller than canvas, keep it fully on screen
+        let finalX = newX;
+        let finalY = newY;
+
+        if (actualWidth <= canvasSize.width) {
+          // Image fits horizontally - keep it fully on screen
+          finalX = Math.max(0, Math.min(newX, canvasSize.width - actualWidth));
+        } else {
+          // Image is wider than canvas - center it
+          finalX = newX;
+        }
+
+        if (actualHeight <= canvasSize.height) {
+          // Image fits vertically - keep it fully on screen
+          finalY = Math.max(0, Math.min(newY, canvasSize.height - actualHeight));
+        } else {
+          // Image is taller than canvas - center it
+          finalY = newY;
+        }
 
         const updatedCropRect = {
           x: result.cropRect.x || 0,
@@ -388,8 +412,8 @@ export default function EditorScreen() {
           maskPath: result.maskPath,
           width: actualWidth,
           height: actualHeight,
-          x: Math.max(0, newX),
-          y: Math.max(0, newY),
+          x: finalX,
+          y: finalY,
         });
 
         setisDetailEditingEnable(false);
@@ -399,7 +423,7 @@ export default function EditorScreen() {
         Alert.alert("Error", "Failed to apply crop. Please try again.");
       }
     },
-    [selectedLayerId, selectedLayer, updateLayer, selectLayer]
+    [selectedLayerId, selectedLayer, updateLayer, selectLayer, canvasSize]
   );
 
   const handleCropCancel = useCallback(() => {
@@ -499,6 +523,7 @@ export default function EditorScreen() {
           onResizeImage={handleAspectRatioChange}
           onComplateEditing={handleCompleteEditing}
           isEditing={isDetailEditingEnable}
+          hasSelectedLayer={!!selectedLayerId && !isDetailEditingEnable}
           editingActions={editingActions || undefined}
           onShuffle={handelShuffle}
           selectedAspect={selectedAspectRatio}
@@ -527,12 +552,10 @@ export default function EditorScreen() {
                 <CanvasImage
                   key={layer.id}
                   layer={layer}
-                  onRequestCrop={() => {}}
+                  onRequestCrop={() => { }}
                   onSelect={() => handleSelectLayer(layer.id)}
                   isSelected={selectedLayerId === layer.id}
                   onChange={(next) => updateLayer(layer.id, next)}
-                  onBringToFront={bringToFront}
-                  onSendToBack={sendToBack}
                 />
               ))
             )}
@@ -575,7 +598,7 @@ export default function EditorScreen() {
           }}
           onEditingPreviewPress={() => {
             setisDetailEditingEnable(false);
-            handleSelectLayer(""); 
+            handleSelectLayer("");
           }}
           onImageDelete={handleImageDelete}
           onUploadPress={() => setPickerVisible(true)}

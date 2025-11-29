@@ -7,6 +7,7 @@ import {
 } from "@/assets/icons";
 import { FontFamily } from "@/constants/fonts";
 import { useTheme } from "@/context/theme-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { FC, memo, useCallback } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -14,6 +15,7 @@ import { Pressable } from "../themed";
 
 interface EditorTopBarInterface {
   isEditing: boolean;
+  hasSelectedLayer?: boolean;
   onRedo: () => void;
   onUndo: () => void;
   onDownload: () => void;
@@ -45,6 +47,7 @@ const aspectOptions: { key: AspectKey; label: string }[] = [
 
 const EditorTopBar: FC<EditorTopBarInterface> = ({
   isEditing,
+  hasSelectedLayer,
   onComplateEditing,
   onDownload,
   onRedo,
@@ -67,12 +70,14 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
 
   const IconButton = ({
     icon,
+    content,
     onPress,
     size = 45,
     rounded = 12,
   }: {
-    icon: number;
-    onPress: () => void;
+    icon?: number;
+    content?: React.ReactNode;
+    onPress?: () => void;
     size?: number;
     rounded?: number;
   }) => (
@@ -88,12 +93,16 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
       ]}
       onPress={onPress}
     >
-      <Image
-        source={icon}
-        style={styles.buttonIcon}
-        tintColor={theme.buttonIcon}
-        contentFit="contain"
-      />
+      {content ? (
+        content
+      ) : icon ? (
+        <Image
+          source={icon}
+          style={styles.buttonIcon}
+          tintColor={theme.buttonIcon}
+          contentFit="contain"
+        />
+      ) : null}
     </Pressable>
   );
 
@@ -126,6 +135,30 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
         <IconButton icon={ic_undo} onPress={onUndo} />
         <IconButton icon={ic_redo} onPress={onRedo} />
         <IconButton icon={ic_shuffle} onPress={onShuffle} />
+        {hasSelectedLayer && (
+          <>
+            <IconButton
+              content={
+                <MaterialCommunityIcons
+                  name="arrange-bring-forward"
+                  size={20}
+                  color={theme.buttonIcon}
+                />
+              }
+              onPress={onBringToFront}
+            />
+            <IconButton
+              content={
+                <MaterialCommunityIcons
+                  name="arrange-send-backward"
+                  size={20}
+                  color={theme.buttonIcon}
+                />
+              }
+              onPress={onSendToBack}
+            />
+          </>
+        )}
       </View>
 
       <View style={styles.rightGroup}>
@@ -151,7 +184,7 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
         <IconButton
           icon={ic_check}
           onPress={
-            editingActions?.canApply ? editingActions.applyCrop : () => {}
+            editingActions?.canApply ? editingActions.applyCrop : () => { }
           }
         />
         {/* <Pressable
@@ -267,5 +300,10 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 12,
     fontFamily: FontFamily.semibold,
+  },
+  layerGroup: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
   },
 });
