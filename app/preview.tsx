@@ -13,7 +13,10 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 interface ImageWithDimensions {
   id: string;
@@ -25,6 +28,7 @@ interface ImageWithDimensions {
 export default function PreviewScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { bottom } = useSafeAreaInsets();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const images = useSelectionStore((state) => state.images);
 
@@ -105,7 +109,7 @@ export default function PreviewScreen() {
         </View>
       </View>
 
-      <View style={styles.buttonContainer}>
+      <View style={[styles.buttonContainer, { bottom: bottom + 20 }]}>
         <Pressable onPress={handleContinue} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Let&apos;s Go</Text>
         </Pressable>
@@ -133,7 +137,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
     alignItems: "center",
   },
   primaryButton: {

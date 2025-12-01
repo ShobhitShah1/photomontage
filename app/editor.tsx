@@ -190,6 +190,8 @@ export const createLayersFromImages = (
       width: displayWidth,
       height: displayHeight,
       z: index + 1,
+      originalWidth: imgWidth,
+      originalHeight: imgHeight,
     };
   });
 };
@@ -393,7 +395,10 @@ export default function EditorScreen() {
 
         if (actualHeight <= canvasSize.height) {
           // Image fits vertically - keep it fully on screen
-          finalY = Math.max(0, Math.min(newY, canvasSize.height - actualHeight));
+          finalY = Math.max(
+            0,
+            Math.min(newY, canvasSize.height - actualHeight)
+          );
         } else {
           // Image is taller than canvas - center it
           finalY = newY;
@@ -406,7 +411,11 @@ export default function EditorScreen() {
           height: actualHeight,
         };
 
-        updateLayer(selectedLayerId, {
+        const newLayerId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const newLayer = {
+          ...selectedLayer,
+          id: newLayerId,
           croppedUri: result.croppedUri,
           cropRect: updatedCropRect,
           maskPath: result.maskPath,
@@ -414,7 +423,13 @@ export default function EditorScreen() {
           height: actualHeight,
           x: finalX,
           y: finalY,
-        });
+          // Ensure we keep the original dimensions and URI for future crops
+          originalUri: selectedLayer.originalUri,
+          originalWidth: selectedLayer.originalWidth,
+          originalHeight: selectedLayer.originalHeight,
+        };
+
+        addLayers([newLayer]);
 
         setisDetailEditingEnable(false);
         selectLayer(null);
@@ -552,7 +567,7 @@ export default function EditorScreen() {
                 <CanvasImage
                   key={layer.id}
                   layer={layer}
-                  onRequestCrop={() => { }}
+                  onRequestCrop={() => {}}
                   onSelect={() => handleSelectLayer(layer.id)}
                   isSelected={selectedLayerId === layer.id}
                   onChange={(next) => updateLayer(layer.id, next)}

@@ -68,7 +68,8 @@ export const useTransformGesture = ({
     .onChange((e) => {
       const scaleVal = e.scale || 1;
       const next = sx.value * scaleVal;
-      ts.value = Math.max(0.2, Math.min(6, next));
+      ts.value = next;
+      // ts.value = Math.max(0.2, Math.min(6, next));
     })
     .onEnd(() =>
       scheduleOnRN(onChange, {

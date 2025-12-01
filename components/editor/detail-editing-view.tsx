@@ -93,8 +93,8 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
 
     const fallbackSize = () => {
       if (cancelled) return;
-      if (isEditingCropped && layer.cropRect) {
-        applySize(layer.cropRect.width, layer.cropRect.height);
+      if (layer.originalWidth && layer.originalHeight) {
+        applySize(layer.originalWidth, layer.originalHeight);
       } else {
         applySize(layer.width, layer.height);
       }
@@ -600,55 +600,93 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
 
   useEffect(() => {
     if (
-      aspectRatio !== "free" &&
       isReady &&
       imageSize.width > 0 &&
       imageSize.height > 0 &&
       displaySize.width > 0 &&
       displaySize.height > 0
     ) {
-      const ratios: Record<string, number> = {
-        "1:1": 1,
-        "3:2": 3 / 2,
-        "4:3": 4 / 3,
-        "16:9": 16 / 9,
-      };
+      // If we have a previous crop, restore it
+      if (layer.cropRect && aspectRatio === "free") {
+        const { x, y, width, height } = layer.cropRect;
 
-      const targetRatio = ratios[aspectRatio];
-      if (!targetRatio) return;
+        // Calculate scale between original image and display size
+        const scaleX = displaySize.width / imageSize.width;
+        const scaleY = displaySize.height / imageSize.height;
 
-      let cropWidth = Math.min(displaySize.width * 0.8, displaySize.width);
-      let cropHeight = Math.min(displaySize.height * 0.8, displaySize.height);
+        // Convert crop rect to display coordinates
+        const displayX = x * scaleX;
+        const displayY = y * scaleY;
+        const displayW = width * scaleX;
+        const displayH = height * scaleY;
 
-      if (cropWidth / cropHeight > targetRatio) {
-        cropHeight = cropWidth / targetRatio;
-        if (cropHeight > displaySize.height) {
-          cropHeight = displaySize.height;
-          cropWidth = cropHeight * targetRatio;
-        }
-      } else {
-        cropWidth = cropHeight * targetRatio;
-        if (cropWidth > displaySize.width) {
-          cropWidth = displaySize.width;
-          cropHeight = cropWidth / targetRatio;
-        }
+        // Center relative to the display area
+        const centerX = displaySize.width / 2;
+        const centerY = displaySize.height / 2;
+
+        // The crop rect is relative to the original image top-left (0,0)
+        // We need to map it to the current display coordinates
+        // Since the image is centered in the display area (or scaled to fit),
+        // displayOffset handles the positioning of the image container.
+        // The path points are relative to the image container (because of the overlay position).
+
+        const newPath: Point[] = [
+          { x: displayX, y: displayY },
+          { x: displayX + displayW, y: displayY },
+          { x: displayX + displayW, y: displayY + displayH },
+          { x: displayX, y: displayY + displayH },
+        ];
+
+        setPath(newPath);
+        pathRef.current = newPath;
+        setEditMode(false);
+        return;
       }
 
-      const centerX = displaySize.width / 2;
-      const centerY = displaySize.height / 2;
+      if (aspectRatio !== "free") {
+        const ratios: Record<string, number> = {
+          "1:1": 1,
+          "3:2": 3 / 2,
+          "4:3": 4 / 3,
+          "16:9": 16 / 9,
+        };
 
-      const newPath: Point[] = [
-        { x: centerX - cropWidth / 2, y: centerY - cropHeight / 2 },
-        { x: centerX + cropWidth / 2, y: centerY - cropHeight / 2 },
-        { x: centerX + cropWidth / 2, y: centerY + cropHeight / 2 },
-        { x: centerX - cropWidth / 2, y: centerY + cropHeight / 2 },
-      ];
+        const targetRatio = ratios[aspectRatio];
+        if (!targetRatio) return;
 
-      setPath(newPath);
-      pathRef.current = newPath;
-      setEditMode(false);
+        let cropWidth = Math.min(displaySize.width * 0.8, displaySize.width);
+        let cropHeight = Math.min(displaySize.height * 0.8, displaySize.height);
+
+        if (cropWidth / cropHeight > targetRatio) {
+          cropHeight = cropWidth / targetRatio;
+          if (cropHeight > displaySize.height) {
+            cropHeight = displaySize.height;
+            cropWidth = cropHeight * targetRatio;
+          }
+        } else {
+          cropWidth = cropHeight * targetRatio;
+          if (cropWidth > displaySize.width) {
+            cropWidth = displaySize.width;
+            cropHeight = cropWidth / targetRatio;
+          }
+        }
+
+        const centerX = displaySize.width / 2;
+        const centerY = displaySize.height / 2;
+
+        const newPath: Point[] = [
+          { x: centerX - cropWidth / 2, y: centerY - cropHeight / 2 },
+          { x: centerX + cropWidth / 2, y: centerY - cropHeight / 2 },
+          { x: centerX + cropWidth / 2, y: centerY + cropHeight / 2 },
+          { x: centerX - cropWidth / 2, y: centerY + cropHeight / 2 },
+        ];
+
+        setPath(newPath);
+        pathRef.current = newPath;
+        setEditMode(false);
+      }
     }
-  }, [aspectRatio, isReady, imageSize, displaySize]);
+  }, [aspectRatio, isReady, imageSize, displaySize, layer.cropRect]);
 
   const displayPath = useMemo(() => {
     if (path.length === 0) return "";

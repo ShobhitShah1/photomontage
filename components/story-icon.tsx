@@ -19,12 +19,17 @@ interface StoryIconProps {
   onPress?: () => void;
 }
 
+const STORY_SIZE = 70;
+const BORDER_WIDTH = 2; // Border thickness
+const INNER_PADDING = 3; // Image and box padding
+const OUTER_RADIUS = 20;
+
 export const StoryIcon: React.FC<StoryIconProps> = ({
   image,
   title,
   onPress,
 }) => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
@@ -85,13 +90,13 @@ export const StoryIcon: React.FC<StoryIconProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    width: 72,
+    width: STORY_SIZE + 2,
   },
   gradientBorder: {
-    width: 70,
-    height: 70,
-    padding: 1.5,
-    borderRadius: 20,
+    width: STORY_SIZE,
+    height: STORY_SIZE,
+    padding: BORDER_WIDTH, // Border automatic
+    borderRadius: OUTER_RADIUS,
     marginBottom: 3,
     shadowColor: "#000",
     shadowOffset: {
@@ -105,8 +110,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: "100%",
     height: "100%",
-    borderRadius: 18,
-    padding: 2,
+    borderRadius: OUTER_RADIUS - BORDER_WIDTH,
+    padding: INNER_PADDING,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -114,7 +119,7 @@ const styles = StyleSheet.create({
   icon: {
     width: "100%",
     height: "100%",
-    borderRadius: 16,
+    borderRadius: OUTER_RADIUS - BORDER_WIDTH - INNER_PADDING,
   },
   title: {
     fontSize: 10,

@@ -16,6 +16,8 @@ export type Layer = {
   maskPath?: string;
   maskBounds?: { x: number; y: number; width: number; height: number };
   thumbUri?: string;
+  originalWidth?: number;
+  originalHeight?: number;
 };
 
 export type EditorState = {
@@ -83,9 +85,7 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       pushHistory(s);
       const maxZ = s.layers.reduce((m, l) => Math.max(m, l.z), 0);
       return {
-        layers: s.layers.map((l) =>
-          l.id === id ? { ...l, z: maxZ + 1 } : l
-        ),
+        layers: s.layers.map((l) => (l.id === id ? { ...l, z: maxZ + 1 } : l)),
       };
     }),
 
@@ -94,9 +94,7 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       pushHistory(s);
       const minZ = s.layers.reduce((m, l) => Math.min(m, l.z), 0);
       return {
-        layers: s.layers.map((l) =>
-          l.id === id ? { ...l, z: minZ - 1 } : l
-        ),
+        layers: s.layers.map((l) => (l.id === id ? { ...l, z: minZ - 1 } : l)),
       };
     }),
 
