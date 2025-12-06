@@ -22,7 +22,7 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
   showBorder = true,
   borderColor = "#fff",
 }) => {
-   const scale = useMemo(() => {
+  const scale = useMemo(() => {
     const scaleX = previewWidth / canvasWidth;
     const scaleY = previewHeight / canvasHeight;
     return Math.min(scaleX, scaleY);
@@ -31,10 +31,11 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
   const scaledWidth = canvasWidth * scale;
   const scaledHeight = canvasHeight * scale;
 
-  const offsetX = (previewWidth - canvasWidth) / 2;
-  const offsetY = (previewHeight - canvasHeight) / 2;
+  // Center the scaled canvas in the preview
+  const offsetX = (previewWidth - scaledWidth) / 2;
+  const offsetY = (previewHeight - scaledHeight) / 2;
 
-   const visibleLayers = useMemo(() => {
+  const visibleLayers = useMemo(() => {
     return [...layers]
       .filter((layer) => layer.croppedUri && layer.maskPath)
       .sort((a, b) => (a.z || 0) - (b.z || 0));
@@ -52,15 +53,15 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
         },
       ]}
     >
-       <View
+      <View
         style={{
           position: "absolute",
           left: offsetX,
           top: offsetY,
           width: canvasWidth,
           height: canvasHeight,
+          transformOrigin: "0% 0%", // Scale from top-left
           transform: [{ scale: scale }],
-
         }}
       >
         {visibleLayers.map((layer) => {
@@ -76,6 +77,7 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
                 width: layer.width || 0,
                 height: layer.height || 0,
                 zIndex: layer.z || 0,
+                transformOrigin: "0% 0%", // Match main canvas behavior
                 transform: [
                   { rotate: `${layer.rotation || 0}deg` },
                   { scale: layer.scale || 1 },

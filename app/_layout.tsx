@@ -17,43 +17,43 @@ import { StyleSheet } from "react-native";
 import BootSplash from "react-native-bootsplash";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+function ThemedNavigator() {
+  const [isReady, setIsReady] = useState(false);
+  const [loaded, error] = useFonts({ ...FONT_ASSETS, ...FontAwesome.font });
+
+  const { isDark } = useTheme();
+
+  return (
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      {!isReady && (
+        <LottieView
+          source={require("@/assets/animation/splash.json")}
+          style={styles.video}
+          autoPlay
+          loop={false}
+          onAnimationLoaded={() => {
+            BootSplash.hide({ fade: true });
+          }}
+          onAnimationFinish={() => {
+            setTimeout(() => {
+              setIsReady(true);
+            }, 200);
+          }}
+          enableSafeModeAndroid
+        />
+      )}
+
+      <Stack screenOptions={{ animation: "ios_from_right" }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="preview" options={{ headerShown: false }} />
+        <Stack.Screen name="editor" options={{ headerShown: false }} />
+        <Stack.Screen name="gallery-view" options={{ headerShown: false }} />
+      </Stack>
+    </ThemeProvider>
+  );
+}
+
 export default function RootLayout() {
-  function ThemedNavigator() {
-    const [isReady, setIsReady] = useState(false);
-    const [loaded, error] = useFonts({ ...FONT_ASSETS, ...FontAwesome.font });
-
-    const { isDark } = useTheme();
-
-    return (
-      <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-        {!isReady && (
-          <LottieView
-            source={require("@/assets/animation/splash.json")}
-            style={styles.video}
-            autoPlay
-            loop={false}
-            onAnimationLoaded={() => {
-              BootSplash.hide({ fade: true });
-            }}
-            onAnimationFinish={() => {
-              setTimeout(() => {
-                setIsReady(true);
-              }, 200);
-            }}
-            enableSafeModeAndroid
-          />
-        )}
-
-        <Stack screenOptions={{ animation: "ios_from_right" }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="preview" options={{ headerShown: false }} />
-          <Stack.Screen name="editor" options={{ headerShown: false }} />
-          <Stack.Screen name="gallery-view" options={{ headerShown: false }} />
-        </Stack>
-      </ThemeProvider>
-    );
-  }
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <CustomThemeProvider>

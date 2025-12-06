@@ -1,4 +1,4 @@
-import { CanvasImage } from "@/components/canvas/canvas-image";
+import CanvasImage from "@/components/canvas/canvas-image";
 import { mapAssetsToImages, useSelectionStore } from "@/store/selection-store";
 import * as ImageManipulator from "expo-image-manipulator";
 import type { ImagePickerAsset } from "expo-image-picker";

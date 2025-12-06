@@ -13,7 +13,10 @@ import React, { FC, memo, useCallback } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Pressable } from "../themed";
 
-interface EditorTopBarInterface {
+// Types
+type AspectKey = "free" | "1:1" | "3:2" | "4:3" | "16:9";
+
+interface EditorTopBarProps {
   isEditing: boolean;
   hasSelectedLayer?: boolean;
   onRedo: () => void;
@@ -35,8 +38,7 @@ interface EditorTopBarInterface {
   };
 }
 
-type AspectKey = "free" | "1:1" | "3:2" | "4:3" | "16:9";
-
+// Constants
 const aspectOptions: { key: AspectKey; label: string }[] = [
   { key: "free", label: "✂" },
   { key: "1:1", label: "1:1" },
@@ -45,7 +47,78 @@ const aspectOptions: { key: AspectKey; label: string }[] = [
   { key: "16:9", label: "16:9" },
 ];
 
-const EditorTopBar: FC<EditorTopBarInterface> = ({
+// Memoized IconButton component
+interface IconButtonProps {
+  icon?: number;
+  content?: React.ReactNode;
+  onPress?: () => void;
+  size?: number;
+  rounded?: number;
+  backgroundColor: string;
+  iconTintColor: string;
+}
+
+const IconButton = memo<IconButtonProps>(
+  ({
+    icon,
+    content,
+    onPress,
+    size = 45,
+    rounded = 12,
+    backgroundColor,
+    iconTintColor,
+  }) => (
+    <Pressable
+      style={[
+        styles.buttonStyle,
+        {
+          width: size,
+          height: size,
+          borderRadius: rounded,
+          backgroundColor,
+        },
+      ]}
+      onPress={onPress}
+    >
+      {content ? (
+        content
+      ) : icon ? (
+        <Image
+          source={icon}
+          style={styles.buttonIcon}
+          tintColor={iconTintColor}
+          contentFit="contain"
+        />
+      ) : null}
+    </Pressable>
+  )
+);
+
+// Memoized AspectButton component
+interface AspectButtonProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  textColor: string;
+}
+
+const AspectButton = memo<AspectButtonProps>(
+  ({ label, selected, onPress, textColor }) => (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.aspectButton,
+        { backgroundColor: "rgba(255, 255, 255, 0.06)" },
+        selected && styles.aspectButtonSelected,
+      ]}
+    >
+      <Text style={[styles.aspectLabel, { color: textColor }]}>{label}</Text>
+    </Pressable>
+  )
+);
+
+// Main component
+const EditorTopBar: FC<EditorTopBarProps> = ({
   isEditing,
   hasSelectedLayer,
   onComplateEditing,
@@ -68,73 +141,58 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
     [onResizeImage]
   );
 
-  const IconButton = ({
-    icon,
-    content,
-    onPress,
-    size = 45,
-    rounded = 12,
-  }: {
-    icon?: number;
-    content?: React.ReactNode;
-    onPress?: () => void;
-    size?: number;
-    rounded?: number;
-  }) => (
-    <Pressable
-      style={[
-        styles.buttonStyle,
-        {
-          width: size,
-          height: size,
-          borderRadius: rounded,
-          backgroundColor: theme.buttonBackground,
-        },
-      ]}
-      onPress={onPress}
-    >
-      {content ? (
-        content
-      ) : icon ? (
-        <Image
-          source={icon}
-          style={styles.buttonIcon}
-          tintColor={theme.buttonIcon}
-          contentFit="contain"
-        />
-      ) : null}
-    </Pressable>
-  );
+  // Render editing view (aspect ratio selection)
+  if (isEditing) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.editLeftGroup}>
+          {aspectOptions.map((option) => (
+            <AspectButton
+              key={option.key}
+              label={option.label}
+              selected={selectedAspect === option.key}
+              onPress={() => handleSelectAspect(option.key)}
+              textColor={theme.buttonIcon}
+            />
+          ))}
+        </View>
 
-  const AspectButton = ({
-    label,
-    selected,
-    onPress,
-  }: {
-    label: string;
-    selected: boolean;
-    onPress: () => void;
-  }) => (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.aspectButton,
-        { backgroundColor: "rgba(255, 255, 255, 0.06)" },
-        selected && styles.aspectButtonSelected,
-      ]}
-    >
-      <Text style={[styles.aspectLabel, { color: theme.buttonIcon }]}>
-        {label}
-      </Text>
-    </Pressable>
-  );
+        <View style={styles.editRightGroup}>
+          <IconButton
+            icon={ic_check}
+            onPress={
+              editingActions?.canApply ? editingActions.applyCrop : undefined
+            }
+            backgroundColor={theme.buttonBackground}
+            iconTintColor={theme.buttonIcon}
+          />
+        </View>
+      </View>
+    );
+  }
 
-  const PreviewView = () => (
-    <>
+  // Render preview view (undo, redo, shuffle, download)
+  return (
+    <View style={styles.container}>
       <View style={styles.leftGroup}>
-        <IconButton icon={ic_undo} onPress={onUndo} />
-        <IconButton icon={ic_redo} onPress={onRedo} />
-        <IconButton icon={ic_shuffle} onPress={onShuffle} />
+        <IconButton
+          icon={ic_undo}
+          onPress={onUndo}
+          backgroundColor={theme.buttonBackground}
+          iconTintColor={theme.buttonIcon}
+        />
+        <IconButton
+          icon={ic_redo}
+          onPress={onRedo}
+          backgroundColor={theme.buttonBackground}
+          iconTintColor={theme.buttonIcon}
+        />
+        <IconButton
+          icon={ic_shuffle}
+          onPress={onShuffle}
+          backgroundColor={theme.buttonBackground}
+          iconTintColor={theme.buttonIcon}
+        />
         {hasSelectedLayer && (
           <>
             <IconButton
@@ -146,6 +204,8 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
                 />
               }
               onPress={onBringToFront}
+              backgroundColor={theme.buttonBackground}
+              iconTintColor={theme.buttonIcon}
             />
             <IconButton
               content={
@@ -156,63 +216,21 @@ const EditorTopBar: FC<EditorTopBarInterface> = ({
                 />
               }
               onPress={onSendToBack}
+              backgroundColor={theme.buttonBackground}
+              iconTintColor={theme.buttonIcon}
             />
           </>
         )}
       </View>
 
       <View style={styles.rightGroup}>
-        <IconButton icon={ic_download} onPress={onDownload} />
-      </View>
-    </>
-  );
-
-  const EditingView = () => (
-    <>
-      <View style={styles.editLeftGroup}>
-        {aspectOptions.map((option) => (
-          <AspectButton
-            key={option.key}
-            label={option.label}
-            selected={selectedAspect === option.key}
-            onPress={() => handleSelectAspect(option.key)}
-          />
-        ))}
-      </View>
-
-      <View style={styles.editRightGroup}>
         <IconButton
-          icon={ic_check}
-          onPress={
-            editingActions?.canApply ? editingActions.applyCrop : () => { }
-          }
+          icon={ic_download}
+          onPress={onDownload}
+          backgroundColor={theme.buttonBackground}
+          iconTintColor={theme.buttonIcon}
         />
-        {/* <Pressable
-          style={[
-            styles.confirmButton,
-            {
-              backgroundColor: theme.buttonBackground,
-              // opacity: editingActions?.canApply ? 1 : 0.5,
-            },
-          ]}
-          onPress={
-            editingActions?.canApply ? editingActions.applyCrop : undefined
-          }
-          disabled={!editingActions?.canApply}
-        >
-          <Image
-            source={ic_check}
-            style={styles.checkIcon}
-            contentFit="contain"
-          />
-        </Pressable> */}
       </View>
-    </>
-  );
-
-  return (
-    <View style={styles.container}>
-      {isEditing ? <EditingView /> : <PreviewView />}
     </View>
   );
 };
@@ -268,42 +286,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   aspectButtonSelected: {
-    opacity: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
   },
   aspectLabel: {
     fontSize: 12,
     fontFamily: FontFamily.semibold,
-  },
-  confirmButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  confirmLabel: {
-    fontSize: 18,
-    fontFamily: FontFamily.semibold,
-  },
-  checkIcon: {
-    width: 15,
-    height: 15,
-    tintColor: "white",
-  },
-  actionButton: {
-    paddingHorizontal: 12,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionButtonText: {
-    fontSize: 12,
-    fontFamily: FontFamily.semibold,
-  },
-  layerGroup: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
   },
 });

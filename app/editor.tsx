@@ -26,7 +26,6 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import ViewShot from "react-native-view-shot";
 
-import { CanvasImage } from "@/components/canvas/canvas-image";
 import { MiniCanvasPreview } from "@/components/canvas/mini-canvas-preview";
 import { DetailEditingView } from "@/components/editor/detail-editing-view";
 import EditorBottomBar from "@/components/editor/editor-bottom-bar";
@@ -34,6 +33,7 @@ import EditorTopBar from "@/components/editor/editor-top-bar";
 import EmptyCanvasState from "@/components/empty-canvas-state";
 import { View } from "@/components/themed";
 
+import CanvasImage from "@/components/canvas/canvas-image";
 import { DownloadModal } from "@/components/download-modal";
 import {
   QualityOption,
@@ -47,8 +47,6 @@ import { useEditorStore } from "@/store/store";
 import { ImagePickerModal } from "@/temp/components/image-picker-modal";
 import { useIsFocused } from "@react-navigation/native";
 import { useFocusEffect, useRouter } from "expo-router";
-
-// --- Draggable Preview Component ---
 
 interface DraggablePreviewProps {
   children: React.ReactNode;
@@ -413,6 +411,23 @@ export default function EditorScreen() {
 
         const newLayerId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+        // Calculate initial scale to fit within 60% of canvas
+        const maxDisplayWidth = canvasSize.width * 0.6;
+        const maxDisplayHeight = canvasSize.height * 0.6;
+        let initialScale = 1;
+
+        if (actualWidth > maxDisplayWidth || actualHeight > maxDisplayHeight) {
+          const scaleX = maxDisplayWidth / actualWidth;
+          const scaleY = maxDisplayHeight / actualHeight;
+          initialScale = Math.min(scaleX, scaleY);
+        }
+
+        // With transformOrigin at top-left (0% 0%), position is straightforward
+        const scaledWidth = actualWidth * initialScale;
+        const scaledHeight = actualHeight * initialScale;
+        const centeredX = (canvasSize.width - scaledWidth) / 2;
+        const centeredY = (canvasSize.height - scaledHeight) / 2;
+
         const newLayer = {
           ...selectedLayer,
           id: newLayerId,
@@ -421,8 +436,10 @@ export default function EditorScreen() {
           maskPath: result.maskPath,
           width: actualWidth,
           height: actualHeight,
-          x: finalX,
-          y: finalY,
+          x: centeredX,
+          y: centeredY,
+          scale: initialScale,
+          rotation: 0,
           // Ensure we keep the original dimensions and URI for future crops
           originalUri: selectedLayer.originalUri,
           originalWidth: selectedLayer.originalWidth,

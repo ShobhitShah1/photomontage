@@ -64,17 +64,27 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(
     null
   );
-  const isDrawingRef = useRef(false);
-  const pathRef = useRef<Point[]>([]);
 
+  // Shared values for worklet access (avoid using refs in worklets)
   const displaySizeWidth = useSharedValue(0);
   const displaySizeHeight = useSharedValue(0);
   const displayOffsetX = useSharedValue(0);
   const displayOffsetY = useSharedValue(0);
   const isReadyShared = useSharedValue(false);
+  const aspectRatioShared = useSharedValue(aspectRatio);
+  const pathLengthShared = useSharedValue(0);
+  const isDrawingShared = useSharedValue(false);
+  const panStartShared = useSharedValue<{ x: number; y: number } | null>(null);
+  const pathStartShared = useSharedValue<Point[]>([]);
+  const pathDataShared = useSharedValue<Point[]>([]);
 
   const uri = layer.originalUri;
   const isEditingCropped = false;
+
+  // Sync aspectRatio prop to shared value for worklet access
+  useEffect(() => {
+    aspectRatioShared.value = aspectRatio;
+  }, [aspectRatio]);
 
   useEffect(() => {
     if (!uri) {
@@ -204,11 +214,9 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
 
   const updatePath = useCallback((newPath: Point[]) => {
     setPath(newPath);
-    pathRef.current = newPath;
+    pathDataShared.value = newPath;
+    pathLengthShared.value = newPath.length;
   }, []);
-
-  const panStartRef = useRef<{ x: number; y: number } | null>(null);
-  const pathStartRef = useRef<Point[]>([]);
 
   const panGesture = Gesture.Pan()
     .onStart((event) => {
@@ -233,29 +241,17 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
           Math.min(displaySizeHeight.value, y - displayOffsetY.value)
         );
 
-        if (aspectRatio !== "free" && pathRef.current.length === 4) {
-          const bounds = {
-            minX: Math.min(...pathRef.current.map((p) => p.x)),
-            minY: Math.min(...pathRef.current.map((p) => p.y)),
-            maxX: Math.max(...pathRef.current.map((p) => p.x)),
-            maxY: Math.max(...pathRef.current.map((p) => p.y)),
-          };
-
-          if (
-            relativeX >= bounds.minX &&
-            relativeX <= bounds.maxX &&
-            relativeY >= bounds.minY &&
-            relativeY <= bounds.maxY
-          ) {
-            panStartRef.current = { x: relativeX, y: relativeY };
-            pathStartRef.current = [...pathRef.current];
-            return;
-          }
+        // If we have a 4-point path (from fixed aspect ratio), MOVE it, don't draw
+        if (pathLengthShared.value === 4) {
+          panStartShared.value = { x: relativeX, y: relativeY };
+          pathStartShared.value = [...pathDataShared.value];
+          return;
         }
 
-        isDrawingRef.current = true;
+        // Only for free-form mode: start a new drawing
+        isDrawingShared.value = true;
         const newPoint = { x: relativeX, y: relativeY };
-        pathRef.current = [newPoint];
+        pathDataShared.value = [newPoint];
         runOnJS(updatePath)([newPoint]);
       }
     })
@@ -281,44 +277,41 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
           Math.min(displaySizeHeight.value, y - displayOffsetY.value)
         );
 
-        if (
-          panStartRef.current &&
-          pathStartRef.current.length === 4 &&
-          aspectRatio !== "free"
-        ) {
-          const deltaX = relativeX - panStartRef.current.x;
-          const deltaY = relativeY - panStartRef.current.y;
+        // If we started a pan with 4 points (fixed aspect ratio), move the selection
+        if (panStartShared.value && pathStartShared.value.length === 4) {
+          const deltaX = relativeX - panStartShared.value.x;
+          const deltaY = relativeY - panStartShared.value.y;
 
-          const updatedPath = pathStartRef.current.map((point) => ({
+          const updatedPath = pathStartShared.value.map((point: Point) => ({
             x: Math.max(0, Math.min(displaySizeWidth.value, point.x + deltaX)),
             y: Math.max(0, Math.min(displaySizeHeight.value, point.y + deltaY)),
           }));
 
-          pathRef.current = updatedPath;
+          pathDataShared.value = updatedPath;
           runOnJS(updatePath)(updatedPath);
           return;
         }
 
-        if (!isDrawingRef.current) return;
+        if (!isDrawingShared.value) return;
 
         const newPoint = { x: relativeX, y: relativeY };
-        const lastPoint = pathRef.current[pathRef.current.length - 1];
+        const lastPoint = pathDataShared.value[pathDataShared.value.length - 1];
         const distance = Math.sqrt(
           Math.pow(newPoint.x - lastPoint.x, 2) +
             Math.pow(newPoint.y - lastPoint.y, 2)
         );
 
         if (distance > 8) {
-          pathRef.current = [...pathRef.current, newPoint];
-          runOnJS(updatePath)([...pathRef.current]);
+          pathDataShared.value = [...pathDataShared.value, newPoint];
+          runOnJS(updatePath)([...pathDataShared.value]);
         }
       }
     })
     .onEnd(() => {
       "worklet";
-      isDrawingRef.current = false;
-      panStartRef.current = null;
-      pathStartRef.current = [];
+      isDrawingShared.value = false;
+      panStartShared.value = null;
+      pathStartShared.value = [];
     });
 
   const selectedPointIndexRef = useRef<number | null>(null);
@@ -330,7 +323,7 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
   const pointEditGesture = Gesture.Pan()
     .onStart((event) => {
       "worklet";
-      if (!editMode || pathRef.current.length === 0) return;
+      if (!editMode || pathDataShared.value.length === 0) return;
 
       const x = event.x - displayOffsetX.value;
       const y = event.y - displayOffsetY.value;
@@ -338,8 +331,8 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
       let minDist = Infinity;
       let closestIndex = -1;
 
-      for (let i = 0; i < pathRef.current.length; i++) {
-        const point = pathRef.current[i];
+      for (let i = 0; i < pathDataShared.value.length; i++) {
+        const point = pathDataShared.value[i];
         const dist = Math.sqrt(
           Math.pow(x - point.x, 2) + Math.pow(y - point.y, 2)
         );
@@ -360,7 +353,7 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
       if (
         !editMode ||
         currentSelected === null ||
-        pathRef.current.length === 0
+        pathDataShared.value.length === 0
       ) {
         return;
       }
@@ -374,21 +367,24 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
         Math.min(displaySizeHeight.value, event.y - displayOffsetY.value)
       );
 
-      if (aspectRatio !== "free" && pathRef.current.length === 4) {
+      if (
+        aspectRatioShared.value !== "free" &&
+        pathDataShared.value.length === 4
+      ) {
         const ratios: Record<string, number> = {
           "1:1": 1,
           "3:2": 3 / 2,
           "4:3": 4 / 3,
           "16:9": 16 / 9,
         };
-        const targetRatio = ratios[aspectRatio];
+        const targetRatio = ratios[aspectRatioShared.value];
 
         if (targetRatio) {
           const bounds = {
-            minX: Math.min(...pathRef.current.map((p) => p.x)),
-            minY: Math.min(...pathRef.current.map((p) => p.y)),
-            maxX: Math.max(...pathRef.current.map((p) => p.x)),
-            maxY: Math.max(...pathRef.current.map((p) => p.y)),
+            minX: Math.min(...pathDataShared.value.map((p: Point) => p.x)),
+            minY: Math.min(...pathDataShared.value.map((p: Point) => p.y)),
+            maxX: Math.max(...pathDataShared.value.map((p: Point) => p.x)),
+            maxY: Math.max(...pathDataShared.value.map((p: Point) => p.y)),
           };
 
           const centerX = (bounds.minX + bounds.maxX) / 2;
@@ -424,15 +420,15 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
             );
           }
 
-          pathRef.current = updatedPath;
+          pathDataShared.value = updatedPath;
           runOnJS(updatePath)(updatedPath);
           return;
         }
       }
 
-      const updatedPath = [...pathRef.current];
+      const updatedPath = [...pathDataShared.value];
       updatedPath[currentSelected] = { x, y };
-      pathRef.current = updatedPath;
+      pathDataShared.value = updatedPath;
       runOnJS(updatePath)(updatedPath);
     })
     .onEnd(() => {
@@ -443,7 +439,8 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
 
   const clearPath = useCallback(() => {
     setPath([]);
-    pathRef.current = [];
+    pathDataShared.value = [];
+    pathLengthShared.value = 0;
     setEditMode(false);
     setSelectedPointIndex(null);
   }, []);
@@ -514,12 +511,13 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
     };
 
     try {
+      // Use JPEG with compression to reduce memory usage for large images
       const manipResult = await ImageManipulator.manipulateAsync(
         uri,
         [{ crop: cropRect }],
         {
-          compress: 1,
-          format: ImageManipulator.SaveFormat.PNG,
+          compress: 0.85, // Good balance of quality and size
+          format: ImageManipulator.SaveFormat.JPEG,
         }
       );
 
@@ -638,53 +636,63 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
         ];
 
         setPath(newPath);
-        pathRef.current = newPath;
+        pathDataShared.value = newPath;
+        pathLengthShared.value = 4;
         setEditMode(false);
         return;
       }
 
-      if (aspectRatio !== "free") {
-        const ratios: Record<string, number> = {
-          "1:1": 1,
-          "3:2": 3 / 2,
-          "4:3": 4 / 3,
-          "16:9": 16 / 9,
-        };
-
-        const targetRatio = ratios[aspectRatio];
-        if (!targetRatio) return;
-
-        let cropWidth = Math.min(displaySize.width * 0.8, displaySize.width);
-        let cropHeight = Math.min(displaySize.height * 0.8, displaySize.height);
-
-        if (cropWidth / cropHeight > targetRatio) {
-          cropHeight = cropWidth / targetRatio;
-          if (cropHeight > displaySize.height) {
-            cropHeight = displaySize.height;
-            cropWidth = cropHeight * targetRatio;
-          }
-        } else {
-          cropWidth = cropHeight * targetRatio;
-          if (cropWidth > displaySize.width) {
-            cropWidth = displaySize.width;
-            cropHeight = cropWidth / targetRatio;
-          }
-        }
-
-        const centerX = displaySize.width / 2;
-        const centerY = displaySize.height / 2;
-
-        const newPath: Point[] = [
-          { x: centerX - cropWidth / 2, y: centerY - cropHeight / 2 },
-          { x: centerX + cropWidth / 2, y: centerY - cropHeight / 2 },
-          { x: centerX + cropWidth / 2, y: centerY + cropHeight / 2 },
-          { x: centerX - cropWidth / 2, y: centerY + cropHeight / 2 },
-        ];
-
-        setPath(newPath);
-        pathRef.current = newPath;
+      // When switching to "free" mode without a cropRect, clear any existing path
+      if (aspectRatio === "free") {
+        setPath([]);
+        pathDataShared.value = [];
+        pathLengthShared.value = 0;
         setEditMode(false);
+        return;
       }
+
+      // Create fixed aspect ratio rectangle (aspectRatio is guaranteed to be non-free here)
+      const ratios: Record<string, number> = {
+        "1:1": 1,
+        "3:2": 3 / 2,
+        "4:3": 4 / 3,
+        "16:9": 16 / 9,
+      };
+
+      const targetRatio = ratios[aspectRatio];
+      if (!targetRatio) return;
+
+      let cropWidth = Math.min(displaySize.width * 0.8, displaySize.width);
+      let cropHeight = Math.min(displaySize.height * 0.8, displaySize.height);
+
+      if (cropWidth / cropHeight > targetRatio) {
+        cropWidth = cropHeight * targetRatio;
+        if (cropWidth > displaySize.width) {
+          cropWidth = displaySize.width;
+          cropHeight = cropWidth / targetRatio;
+        }
+      } else {
+        cropHeight = cropWidth / targetRatio;
+        if (cropHeight > displaySize.height) {
+          cropHeight = displaySize.height;
+          cropWidth = cropHeight * targetRatio;
+        }
+      }
+
+      const centerX = displaySize.width / 2;
+      const centerY = displaySize.height / 2;
+
+      const newPath: Point[] = [
+        { x: centerX - cropWidth / 2, y: centerY - cropHeight / 2 },
+        { x: centerX + cropWidth / 2, y: centerY - cropHeight / 2 },
+        { x: centerX + cropWidth / 2, y: centerY + cropHeight / 2 },
+        { x: centerX - cropWidth / 2, y: centerY + cropHeight / 2 },
+      ];
+
+      setPath(newPath);
+      pathDataShared.value = newPath;
+      pathLengthShared.value = 4;
+      setEditMode(false);
     }
   }, [aspectRatio, isReady, imageSize, displaySize, layer.cropRect]);
 
