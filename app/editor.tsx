@@ -234,6 +234,7 @@ export default function EditorScreen() {
     selectedLayerId,
     selectLayer,
     updateLayer,
+    updateLayerFast,
     addLayers,
     undo,
     redo,
@@ -587,7 +588,7 @@ export default function EditorScreen() {
                   onRequestCrop={() => {}}
                   onSelect={() => handleSelectLayer(layer.id)}
                   isSelected={selectedLayerId === layer.id}
-                  onChange={(next) => updateLayer(layer.id, next)}
+                  onChange={(next) => updateLayerFast(layer.id, next)}
                 />
               ))
             )}

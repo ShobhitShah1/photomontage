@@ -135,8 +135,8 @@ export const useEditorImages = (
 
       if (finalValidLayers.length > 0) {
         addLayers(finalValidLayers);
-        selectLayer(finalValidLayers[0].id);
-        setActive(finalValidLayers[0].id);
+        // Don't auto-select newly uploaded images
+        // User can manually select from the bottom bar
       } else {
         Alert.alert(
           "Error",

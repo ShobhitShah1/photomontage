@@ -309,6 +309,11 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
     })
     .onEnd(() => {
       "worklet";
+      // Sync the final path position to React state before resetting
+      // This is critical for fixed aspect ratio selections that were moved
+      if (pathDataShared.value.length === 4) {
+        runOnJS(updatePath)([...pathDataShared.value]);
+      }
       isDrawingShared.value = false;
       panStartShared.value = null;
       pathStartShared.value = [];
@@ -478,11 +483,18 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
   }, []);
 
   const handleComplete = useCallback(async () => {
-    if (path.length < 3 || !isReady || !imageSize || !displaySize) {
+    // Prefer shared value path if available as it's more up-to-date
+    // Use React state path as fallback
+    let currentPath = path;
+    if (pathDataShared.value && pathDataShared.value.length > 0) {
+      currentPath = [...pathDataShared.value];
+    }
+
+    if (currentPath.length < 3 || !isReady || !imageSize || !displaySize) {
       return;
     }
 
-    const bounds = calculateBounds(path);
+    const bounds = calculateBounds(currentPath);
     if (bounds.width === 0 || bounds.height === 0) {
       return;
     }
@@ -511,17 +523,16 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
     };
 
     try {
-      // Use JPEG with compression to reduce memory usage for large images
       const manipResult = await ImageManipulator.manipulateAsync(
         uri,
         [{ crop: cropRect }],
         {
-          compress: 0.85, // Good balance of quality and size
-          format: ImageManipulator.SaveFormat.JPEG,
+          compress: 1,
+          format: ImageManipulator.SaveFormat.PNG,
         }
       );
 
-      const adjustedPoints = path.map((p) => ({
+      const adjustedPoints = currentPath.map((p) => ({
         x: Math.max(0, p.x - bounds.x),
         y: Math.max(0, p.y - bounds.y),
       }));

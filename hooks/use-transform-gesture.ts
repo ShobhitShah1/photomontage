@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Gesture } from "react-native-gesture-handler";
 import {
   useAnimatedStyle,
@@ -29,81 +29,108 @@ export const useTransformGesture = ({
   onSelect,
   onChange,
 }: Params) => {
+  // All shared values for transform state
   const tx = useSharedValue(x);
   const ty = useSharedValue(y);
   const ts = useSharedValue(scale);
   const tr = useSharedValue(rotation);
-  const sx = useSharedValue(scale);
-  const sr = useSharedValue(rotation);
-  const px = useSharedValue(x);
-  const py = useSharedValue(y);
 
-  const tap = Gesture.Tap().onEnd(() => scheduleOnRN(onSelect));
-  const longPress = Gesture.LongPress().onEnd(() => scheduleOnRN(onSelect));
+  // Context values for gesture start positions
+  const startX = useSharedValue(x);
+  const startY = useSharedValue(y);
+  const startScale = useSharedValue(scale);
+  const startRotation = useSharedValue(rotation);
 
-  const pan = Gesture.Pan()
-    .onStart(() => {
-      px.value = tx.value;
-      py.value = ty.value;
-    })
-    .onChange((e) => {
-      const nx = px.value + e.translationX;
-      const ny = py.value + e.translationY;
-      if (Number.isFinite(nx)) tx.value = nx;
-      if (Number.isFinite(ny)) ty.value = ny;
-    })
-    .onEnd(() =>
-      scheduleOnRN(onChange, {
-        x: tx.value,
-        y: ty.value,
-        scale: ts.value,
-        rotation: tr.value,
+  // Memoize the sync function to prevent recreating on every render
+  const sync = useCallback((nx: number, ny: number, ns: number, nr: number) => {
+    tx.value = withTiming(nx, { duration: 100 });
+    ty.value = withTiming(ny, { duration: 100 });
+    ts.value = withTiming(ns, { duration: 100 });
+    tr.value = withTiming(nr, { duration: 100 });
+  }, []);
+
+  // Create all gestures in a single useMemo to avoid recreation
+  const gesture = useMemo(() => {
+    const tap = Gesture.Tap().onEnd(() => {
+      "worklet";
+      scheduleOnRN(onSelect);
+    });
+
+    const longPress = Gesture.LongPress()
+      .minDuration(300)
+      .onEnd(() => {
+        "worklet";
+        scheduleOnRN(onSelect);
+      });
+
+    const pan = Gesture.Pan()
+      .minDistance(1)
+      .onStart(() => {
+        "worklet";
+        startX.value = tx.value;
+        startY.value = ty.value;
       })
-    );
-
-  const pinch = Gesture.Pinch()
-    .onStart(() => {
-      sx.value = ts.value;
-    })
-    .onChange((e) => {
-      const scaleVal = e.scale || 1;
-      const next = sx.value * scaleVal;
-      ts.value = next;
-      // ts.value = Math.max(0.2, Math.min(6, next));
-    })
-    .onEnd(() =>
-      scheduleOnRN(onChange, {
-        x: tx.value,
-        y: ty.value,
-        scale: ts.value,
-        rotation: tr.value,
+      .onUpdate((e) => {
+        "worklet";
+        tx.value = startX.value + e.translationX;
+        ty.value = startY.value + e.translationY;
       })
-    );
+      .onEnd(() => {
+        "worklet";
+        scheduleOnRN(onChange, {
+          x: tx.value,
+          y: ty.value,
+          scale: ts.value,
+          rotation: tr.value,
+        });
+      });
 
-  const rotate = Gesture.Rotation()
-    .onStart(() => {
-      sr.value = tr.value;
-    })
-    .onChange((e) => {
-      const rot = ((e.rotation ?? 0) * 180) / Math.PI;
-      const next = sr.value + rot;
-      if (Number.isFinite(next)) tr.value = next;
-    })
-    .onEnd(() =>
-      scheduleOnRN(onChange, {
-        x: tx.value,
-        y: ty.value,
-        scale: ts.value,
-        rotation: tr.value,
+    const pinch = Gesture.Pinch()
+      .onStart(() => {
+        "worklet";
+        startScale.value = ts.value;
       })
-    );
+      .onUpdate((e) => {
+        "worklet";
+        ts.value = startScale.value * e.scale;
+      })
+      .onEnd(() => {
+        "worklet";
+        scheduleOnRN(onChange, {
+          x: tx.value,
+          y: ty.value,
+          scale: ts.value,
+          rotation: tr.value,
+        });
+      });
 
-  const combinedPanPinchRotate = Gesture.Simultaneous(pinch, rotate, pan);
-  const composed = useMemo(
-    () => Gesture.Race(tap, longPress, combinedPanPinchRotate),
-    [tap, longPress, combinedPanPinchRotate]
-  );
+    const rotate = Gesture.Rotation()
+      .onStart(() => {
+        "worklet";
+        startRotation.value = tr.value;
+      })
+      .onUpdate((e) => {
+        "worklet";
+        const rotDeg = (e.rotation * 180) / Math.PI;
+        tr.value = startRotation.value + rotDeg;
+      })
+      .onEnd(() => {
+        "worklet";
+        scheduleOnRN(onChange, {
+          x: tx.value,
+          y: ty.value,
+          scale: ts.value,
+          rotation: tr.value,
+        });
+      });
 
+    // Combine gestures: pan, pinch, and rotate can happen simultaneously
+    // Tap and long press race against the combined gesture
+    const simultaneous = Gesture.Simultaneous(pan, pinch, rotate);
+    return Gesture.Race(tap, longPress, simultaneous);
+  }, [onSelect, onChange]);
+
+  // Animated style runs on UI thread - no JS bridge needed during animation
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: tx.value },
@@ -113,12 +140,5 @@ export const useTransformGesture = ({
     ],
   }));
 
-  const sync = (nx: number, ny: number, ns: number, nr: number) => {
-    tx.value = withTiming(nx, { duration: 120 });
-    ty.value = withTiming(ny, { duration: 120 });
-    ts.value = withTiming(ns, { duration: 120 });
-    tr.value = withTiming(nr, { duration: 120 });
-  };
-
-  return { gesture: composed, animatedStyle, sync } as const;
+  return { gesture, animatedStyle, sync } as const;
 };

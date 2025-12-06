@@ -40,6 +40,7 @@ export type EditorState = {
 type Actions = {
   addLayers: (layers: Layer[]) => void;
   updateLayer: (id: string, partial: Partial<Layer>) => void;
+  updateLayerFast: (id: string, partial: Partial<Layer>) => void; // No history push - for dragging
   removeLayer: (id: string) => void;
   selectLayer: (id: string | null) => void;
   reorder: (id: string, z: number) => void;
@@ -108,6 +109,13 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       };
     }),
 
+  // Fast update without history - use for real-time dragging
+  updateLayerFast: (id, partial) =>
+    set((s) => ({
+      layers: s.layers.map((l) => (l.id === id ? { ...l, ...partial } : l)),
+    })),
+
+  // Full update with history - use at end of gesture
   updateLayer: (id, partial) =>
     set((s) => {
       if (partial.width !== undefined && partial.width <= 0) {
@@ -124,8 +132,6 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       const updatedLayers = s.layers.map((l) =>
         l.id === id ? { ...l, ...partial } : l
       );
-
-      // console.log("Updated layers:", updatedLayers);
 
       return {
         layers: updatedLayers,

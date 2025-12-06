@@ -112,18 +112,11 @@ const StoryImage = React.memo(
           cachePolicy="memory-disk"
           recyclingKey={`story-${story.id}`}
           onLoad={() => {
-            console.log(
-              "Image loaded for index:",
-              index,
-              "currentIndex:",
-              currentIndex
-            );
             setImageLoaded((prev) => ({ ...prev, [index]: true }));
             setImageError((prev) => ({ ...prev, [index]: false }));
             // Don't start timer here anymore - goToIndex handles it with a delay
           }}
           onError={() => {
-            console.log("Image error for index:", index);
             setImageError((prev) => ({ ...prev, [index]: true }));
             setImageLoaded((prev) => ({ ...prev, [index]: false }));
             // Don't start timer here anymore - goToIndex handles it with a delay
@@ -217,20 +210,11 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     try {
       if (!isMountedShared.value) return;
 
-      console.log(
-        "Timer completed for story index:",
-        index,
-        "of",
-        stories.length
-      );
-
       // If this is the last story (index is stories.length - 1), close modal
       if (index >= stories.length - 1) {
-        console.log("Last story completed, closing modal");
         runOnJS(safeHandleClose)();
       } else {
         // Otherwise, go to next story
-        console.log("Going to next story:", index + 1);
         runOnJS(safeGoToIndex)(index + 1, true);
       }
     } catch (error) {

@@ -73,7 +73,7 @@ export const shareAppWithFriends = async () => {
   try {
     const appUrl =
       Platform.OS === "ios"
-        ? "https://apps.apple.com/app/gigglam/id1234567890" 
+        ? "https://apps.apple.com/app/gigglam/id1234567890"
         : "https://play.google.com/store/apps/details?id=com.gigglam";
 
     const message = `Check out Gigglam! 🎉\n\nCreate rooms, share images, and have fun with friends!\n\nDownload it here: ${appUrl}`;
@@ -87,8 +87,7 @@ export const shareAppWithFriends = async () => {
 
     try {
       await Share.open(shareOptions);
-    } catch (shareError: any) {
-    }
+    } catch (shareError: any) {}
   } catch (error) {
     console.error("Error sharing app:", error);
 
@@ -100,20 +99,6 @@ export const shareAppWithFriends = async () => {
         { text: "Cancel", style: "cancel" },
       ]
     );
-  }
-};
-
-/**
- * Copies text to clipboard (fallback for sharing)
- */
-const copyToClipboard = async (text: string) => {
-  try {
-    // Note: You might want to install @react-native-clipboard/clipboard for better clipboard support
-    // For now, this is a placeholder
-    console.log("Copied to clipboard:", text);
-    Alert.alert("Copied!", "App link copied to clipboard");
-  } catch (error) {
-    console.error("Error copying to clipboard:", error);
   }
 };
 

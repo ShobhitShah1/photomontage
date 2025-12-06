@@ -4,7 +4,7 @@ import { useTheme } from "@/context/theme-context";
 import { PickedImage } from "@/store/selection-store";
 import { Layer } from "@/store/store";
 import { Image } from "expo-image";
-import React, { FC, memo } from "react";
+import React, { FC, memo, useEffect } from "react";
 import { Alert, FlatList, StyleSheet, View } from "react-native";
 import { Pressable } from "../themed";
 
@@ -29,9 +29,19 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
   canvasLayers = [],
   canvasWidth = 640,
   canvasHeight = 640,
-  onEditingPreviewPress
-  }) => {
+  onEditingPreviewPress,
+}) => {
   const { theme } = useTheme();
+
+  // Preload all images when component mounts or images change
+  useEffect(() => {
+    if (images.length > 0) {
+      const urisToPreload = images.map((img) => img.uri).filter(Boolean);
+      Image.prefetch(urisToPreload).catch(() => {
+        // Silently ignore prefetch errors
+      });
+    }
+  }, [images]);
 
   const handleLongPress = (item: PickedImage) => {
     if (!onImageDelete) return;
@@ -114,6 +124,9 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
                 contentFit="cover"
                 source={{ uri: item.uri }}
                 style={styles.imageStyle}
+                cachePolicy="memory-disk"
+                recyclingKey={item.id}
+                priority="high"
               />
             </Pressable>
           );

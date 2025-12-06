@@ -1,11 +1,12 @@
 import { useTransformGesture } from "@/hooks/use-transform-gesture";
 import { Layer } from "@/store/store";
 import { Image } from "expo-image";
-import React, { memo, useCallback, useEffect, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { runOnJS } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import Svg, { ClipPath, Defs, Path, Image as SvgImage } from "react-native-svg";
+import { scheduleOnRN } from "react-native-worklets";
 
 interface CanvasImageProps {
   layer: Layer;
@@ -15,20 +16,42 @@ interface CanvasImageProps {
   onRequestCrop?: (id: string) => void;
 }
 
-const CanvasImage: React.FC<CanvasImageProps> = ({
+const CanvasImageComponent: React.FC<CanvasImageProps> = ({
   layer,
   isSelected,
   onSelect,
   onChange,
   onRequestCrop,
 }) => {
+  // Use refs to avoid recreating callbacks that would cause gesture recreation
+  const layerRef = useRef(layer);
+  const onSelectRef = useRef(onSelect);
+  const onChangeRef = useRef(onChange);
+
+  // Update refs on each render
+  layerRef.current = layer;
+  onSelectRef.current = onSelect;
+  onChangeRef.current = onChange;
+
+  // Stable callbacks that use refs internally
+  const handleSelect = useCallback(() => {
+    onSelectRef.current(layerRef.current.id);
+  }, []);
+
+  const handleChange = useCallback(
+    (n: { x: number; y: number; scale: number; rotation: number }) => {
+      onChangeRef.current({ ...layerRef.current, ...n });
+    },
+    []
+  );
+
   const { gesture, animatedStyle, sync } = useTransformGesture({
     x: layer.x,
     y: layer.y,
     scale: layer.scale,
     rotation: layer.rotation,
-    onSelect: () => onSelect(layer.id),
-    onChange: (n) => onChange({ ...layer, ...n }),
+    onSelect: handleSelect,
+    onChange: handleChange,
   });
 
   useEffect(() => {
@@ -39,13 +62,10 @@ const CanvasImage: React.FC<CanvasImageProps> = ({
   const isCropped = !!layer.croppedUri;
   const hasMask = !!layer.maskPath && layer.maskPath.length > 0;
 
-  const { displayWidth, displayHeight } = useMemo(() => {
-    return {
-      displayWidth: layer.width,
-      displayHeight: layer.height,
-    };
-  }, [layer.width, layer.height]);
+  const displayWidth = layer.width;
+  const displayHeight = layer.height;
 
+  // Memoize double tap handler
   const handleDoubleTap = useCallback(() => {
     if (onRequestCrop) {
       onRequestCrop(layer.id);
@@ -58,7 +78,7 @@ const CanvasImage: React.FC<CanvasImageProps> = ({
         .numberOfTaps(2)
         .onEnd(() => {
           "worklet";
-          runOnJS(handleDoubleTap)();
+          scheduleOnRN(handleDoubleTap);
         }),
     [handleDoubleTap]
   );
@@ -68,77 +88,30 @@ const CanvasImage: React.FC<CanvasImageProps> = ({
     [doubleTap, gesture]
   );
 
-  const clipId = useMemo(() => `clip-${layer.id}`, [layer.id]);
-
-  const scaledMaskPath = useMemo(() => {
-    if (!hasMask || !layer.maskPath || !isCropped || !layer.cropRect) {
-      return layer.maskPath;
-    }
-    return layer.maskPath;
-  }, [hasMask, isCropped, layer.maskPath, layer.cropRect]);
-
-  const imageStyle = useMemo(
-    () => ({
-      width: displayWidth,
-      height: displayHeight,
-      borderRadius: isCropped ? 0 : 8,
-    }),
-    [displayWidth, displayHeight, isCropped]
-  );
-
-  const containerStyle = useMemo(
-    () => [
-      styles.container,
-      {
-        width: displayWidth,
-        height: displayHeight,
-        zIndex: layer.z,
-      },
-      animatedStyle,
-    ],
-    [displayWidth, displayHeight, layer.z, animatedStyle]
-  );
-
-  const selectionBorderStyle = useMemo(
-    () => [
-      StyleSheet.absoluteFill,
-      {
-        borderWidth: 2,
-        borderColor: "white",
-        borderRadius: isCropped ? 0 : 8,
-        pointerEvents: "none" as const,
-      },
-    ],
-    [isCropped]
-  );
-
-  const maskedContainerStyle = useMemo(
-    () => [
-      styles.maskedContainer,
-      {
-        width: displayWidth,
-        height: displayHeight,
-      },
-    ],
-    [displayWidth, displayHeight]
-  );
-
-  const imageContainerStyle = useMemo(
-    () => ({
-      width: displayWidth,
-      height: displayHeight,
-      overflow: "hidden" as const,
-    }),
-    [displayWidth, displayHeight]
-  );
+  const clipId = `clip-${layer.id}`;
 
   if (!src) return null;
 
   return (
     <GestureDetector gesture={finalGesture}>
-      <Animated.View style={containerStyle}>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            width: displayWidth,
+            height: displayHeight,
+            zIndex: layer.z,
+          },
+          animatedStyle,
+        ]}
+      >
         {hasMask ? (
-          <View style={maskedContainerStyle}>
+          <View
+            style={[
+              styles.maskedContainer,
+              { width: displayWidth, height: displayHeight },
+            ]}
+          >
             <Svg
               width={displayWidth}
               height={displayHeight}
@@ -146,7 +119,7 @@ const CanvasImage: React.FC<CanvasImageProps> = ({
             >
               <Defs>
                 <ClipPath id={clipId}>
-                  <Path d={scaledMaskPath} />
+                  <Path d={layer.maskPath || ""} />
                 </ClipPath>
               </Defs>
               <SvgImage
@@ -160,7 +133,7 @@ const CanvasImage: React.FC<CanvasImageProps> = ({
               />
               {isSelected && (
                 <Path
-                  d={scaledMaskPath}
+                  d={layer.maskPath || ""}
                   fill="none"
                   stroke="white"
                   strokeWidth={2}
@@ -171,17 +144,37 @@ const CanvasImage: React.FC<CanvasImageProps> = ({
             </Svg>
           </View>
         ) : (
-          <View style={imageContainerStyle}>
+          <View
+            style={{
+              width: displayWidth,
+              height: displayHeight,
+              overflow: "hidden",
+            }}
+          >
             <Image
               source={{ uri: src }}
-              style={imageStyle}
+              style={{
+                width: displayWidth,
+                height: displayHeight,
+                borderRadius: isCropped ? 0 : 8,
+              }}
               contentFit="fill"
               cachePolicy="memory-disk"
-              transition={100}
-              priority="high"
               recyclingKey={layer.id}
             />
-            {isSelected && <View style={selectionBorderStyle} />}
+            {isSelected && (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    borderWidth: 2,
+                    borderColor: "white",
+                    borderRadius: isCropped ? 0 : 8,
+                  },
+                ]}
+                pointerEvents="none"
+              />
+            )}
           </View>
         )}
       </Animated.View>
@@ -189,7 +182,26 @@ const CanvasImage: React.FC<CanvasImageProps> = ({
   );
 };
 
-export default memo(CanvasImage);
+// Custom comparison for memo - only re-render when these specific props change
+const arePropsEqual = (prev: CanvasImageProps, next: CanvasImageProps) => {
+  return (
+    prev.layer.id === next.layer.id &&
+    prev.layer.x === next.layer.x &&
+    prev.layer.y === next.layer.y &&
+    prev.layer.scale === next.layer.scale &&
+    prev.layer.rotation === next.layer.rotation &&
+    prev.layer.width === next.layer.width &&
+    prev.layer.height === next.layer.height &&
+    prev.layer.z === next.layer.z &&
+    prev.layer.croppedUri === next.layer.croppedUri &&
+    prev.layer.originalUri === next.layer.originalUri &&
+    prev.layer.maskPath === next.layer.maskPath &&
+    prev.isSelected === next.isSelected
+  );
+};
+
+const CanvasImage = memo(CanvasImageComponent, arePropsEqual);
+export default CanvasImage;
 
 const styles = StyleSheet.create({
   container: {
@@ -201,177 +213,3 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 });
-
-// import { useTransformGesture } from "@/hooks/use-transform-gesture";
-// import { Layer } from "@/store/store";
-// import { Image } from "expo-image";
-// import React, { useEffect, useMemo } from "react";
-// import { StyleSheet, View } from "react-native";
-// import { Gesture, GestureDetector } from "react-native-gesture-handler";
-// import Animated from "react-native-reanimated";
-// import Svg, { ClipPath, Defs, Path, Image as SvgImage } from "react-native-svg";
-// import { scheduleOnRN } from "react-native-worklets";
-
-// interface CanvasImageProps {
-//   layer: Layer;
-//   isSelected: boolean;
-//   onSelect: (id: string) => void;
-//   onChange: (l: Layer) => void;
-//   onRequestCrop?: (id: string) => void;
-// }
-
-// export const CanvasImage: React.FC<CanvasImageProps> = ({
-//   layer,
-//   isSelected,
-//   onSelect,
-//   onChange,
-//   onRequestCrop,
-// }) => {
-//   const { gesture, animatedStyle, sync } = useTransformGesture({
-//     x: layer.x,
-//     y: layer.y,
-//     scale: layer.scale,
-//     rotation: layer.rotation,
-//     onSelect: () => onSelect(layer.id),
-//     onChange: (n) => onChange({ ...layer, ...n }),
-//   });
-
-//   useEffect(() => {
-//     sync(layer.x, layer.y, layer.scale, layer.rotation);
-//   }, [layer.x, layer.y, layer.scale, layer.rotation, sync]);
-
-//   const src = layer.croppedUri || layer.originalUri;
-//   const isCropped = !!layer.croppedUri;
-//   const hasMask = !!layer.maskPath && layer.maskPath.length > 0;
-
-//   const { displayWidth, displayHeight } = useMemo(() => {
-//     return {
-//       displayWidth: layer.width,
-//       displayHeight: layer.height,
-//     };
-//   }, [layer.width, layer.height]);
-
-//   const doubleTap = Gesture.Tap()
-//     .numberOfTaps(2)
-//     .onEnd(() => {
-//       if (onRequestCrop) {
-//         scheduleOnRN(onRequestCrop, layer.id);
-//       }
-//     });
-
-//   const finalGesture = Gesture.Simultaneous(doubleTap, gesture);
-
-//   if (!src) return null;
-
-//   const clipId = `clip-${layer.id}`;
-
-//   const scaledMaskPath = useMemo(() => {
-//     if (!hasMask || !layer.maskPath || !isCropped || !layer.cropRect) {
-//       return layer.maskPath;
-//     }
-//     return layer.maskPath;
-//   }, [hasMask, isCropped, layer.maskPath, layer.cropRect]);
-
-//   return (
-//     <GestureDetector gesture={finalGesture}>
-//       <Animated.View
-//         style={[
-//           {
-//             position: "absolute",
-//             width: displayWidth,
-//             height: displayHeight,
-//             zIndex: layer.z,
-//             opacity: 1,
-//             transformOrigin: "0% 0%", // Scale from top-left for correct positioning
-//           },
-//           animatedStyle,
-//         ]}
-//       >
-//         {hasMask ? (
-//           <View
-//             style={[
-//               styles.maskedContainer,
-//               {
-//                 width: displayWidth,
-//                 height: displayHeight,
-//               },
-//             ]}
-//           >
-//             <Svg
-//               width={displayWidth}
-//               height={displayHeight}
-//               style={StyleSheet.absoluteFill}
-//             >
-//               <Defs>
-//                 <ClipPath id={clipId}>
-//                   <Path d={scaledMaskPath} />
-//                 </ClipPath>
-//               </Defs>
-//               <SvgImage
-//                 href={src}
-//                 x="0"
-//                 y="0"
-//                 width={displayWidth}
-//                 height={displayHeight}
-//                 clipPath={`url(#${clipId})`}
-//                 preserveAspectRatio="none"
-//               />
-//               {isSelected && (
-//                 <Path
-//                   d={scaledMaskPath}
-//                   fill="none"
-//                   stroke="white"
-//                   strokeWidth={2}
-//                   strokeLinecap="round"
-//                   strokeLinejoin="round"
-//                 />
-//               )}
-//             </Svg>
-//           </View>
-//         ) : (
-//           <View
-//             style={[
-//               {
-//                 width: displayWidth,
-//                 height: displayHeight,
-//                 overflow: "hidden",
-//               },
-//             ]}
-//           >
-//             <Image
-//               source={{ uri: src }}
-//               style={[
-//                 {
-//                   width: displayWidth,
-//                   height: displayHeight,
-//                   borderRadius: isCropped ? 0 : 8,
-//                 },
-//               ]}
-//               contentFit="fill"
-//               key={src}
-//             />
-//             {isSelected && (
-//               <View
-//                 style={[
-//                   StyleSheet.absoluteFill,
-//                   {
-//                     borderWidth: 2,
-//                     borderColor: "white",
-//                     borderRadius: isCropped ? 0 : 8,
-//                     pointerEvents: "none",
-//                   },
-//                 ]}
-//               />
-//             )}
-//           </View>
-//         )}
-//       </Animated.View>
-//     </GestureDetector>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   maskedContainer: {
-//     overflow: "hidden",
-//   },
-// });

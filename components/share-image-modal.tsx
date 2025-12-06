@@ -179,7 +179,10 @@ export const ShareImageModal: React.FC<ShareImageModalProps> = ({
     >
       <ImageBackground
         source={downloadedImageUri}
-        style={styles.fullScreenBackground}
+        style={[
+          styles.fullScreenBackground,
+          { backgroundColor: theme.background },
+        ]}
         contentFit="cover"
         cachePolicy="memory-disk"
       >
