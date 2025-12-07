@@ -1,4 +1,3 @@
-import { createLayersFromImages } from "@/app/editor";
 import type { SelectionSource } from "@/store/selection-store";
 import {
   mapAssetsToImages,
@@ -6,7 +5,10 @@ import {
   type PickedImage,
 } from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
-import { assignZIndexToLayers } from "@/utiles/editor-utils";
+import {
+  assignZIndexToLayers,
+  createLayersFromImages,
+} from "@/utiles/editor-utils";
 import type { ImagePickerAsset } from "expo-image-picker";
 import { useCallback } from "react";
 import { Alert } from "react-native";

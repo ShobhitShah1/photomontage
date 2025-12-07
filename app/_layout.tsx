@@ -1,4 +1,5 @@
 import { FONT_ASSETS } from "@/constants/fonts";
+import { PermissionProvider } from "@/context/permission-context";
 import {
   ThemeProvider as CustomThemeProvider,
   useTheme,
@@ -48,6 +49,14 @@ function ThemedNavigator() {
         <Stack.Screen name="preview" options={{ headerShown: false }} />
         <Stack.Screen name="editor" options={{ headerShown: false }} />
         <Stack.Screen name="gallery-view" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="permissions"
+          options={{
+            presentation: "fullScreenModal",
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );
@@ -56,9 +65,11 @@ function ThemedNavigator() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <CustomThemeProvider>
-        <ThemedNavigator />
-      </CustomThemeProvider>
+      <PermissionProvider>
+        <CustomThemeProvider>
+          <ThemedNavigator />
+        </CustomThemeProvider>
+      </PermissionProvider>
     </GestureHandlerRootView>
   );
 }

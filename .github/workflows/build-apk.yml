@@ -43,23 +43,3 @@ jobs:
         with:
           name: photomontage-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
-
-      - name: Send email notification
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.SMTP_USER }}
-          password: ${{ secrets.SMTP_PASS }}
-          subject: "Photomontage Release APK Ready - ${{ github.ref_name }}"
-          to: "shobhit942003@gmail.com"
-          from: "Photomontage CI Bot <${{ secrets.SMTP_USER }}>"
-          body: |
-            Hello Team,
-
-            A new Photomontage Release APK build is ready from branch: ${{ github.ref_name }}
-
-            Download it here (GitHub login required):
-            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            -- Photomontage Build Bot

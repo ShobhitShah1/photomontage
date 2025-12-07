@@ -36,6 +36,8 @@ export const createLayersFromImages = (
       width: displayWidth,
       height: displayHeight,
       z: index + 1,
+      originalWidth: imgWidth,
+      originalHeight: imgHeight,
     };
   });
 };

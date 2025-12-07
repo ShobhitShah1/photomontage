@@ -1,4 +1,5 @@
 import { Layer } from "@/store/store";
+import { simplifyPath } from "@/utiles/path-simplify";
 import { colors } from "@/utiles/tokens";
 import { Image } from "expo-image";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -16,8 +17,9 @@ import {
   View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { runOnJS, useSharedValue } from "react-native-reanimated";
+import { useSharedValue } from "react-native-reanimated";
 import Svg, { Circle, Path } from "react-native-svg";
+import { scheduleOnRN } from "react-native-worklets";
 
 interface DetailEditingViewProps {
   layer: Layer;
@@ -77,6 +79,7 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
   const panStartShared = useSharedValue<{ x: number; y: number } | null>(null);
   const pathStartShared = useSharedValue<Point[]>([]);
   const pathDataShared = useSharedValue<Point[]>([]);
+  const lastUpdateTime = useSharedValue(0); // Throttle updates to ~30fps
 
   const uri = layer.originalUri;
   const isEditingCropped = false;
@@ -252,7 +255,8 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
         isDrawingShared.value = true;
         const newPoint = { x: relativeX, y: relativeY };
         pathDataShared.value = [newPoint];
-        runOnJS(updatePath)([newPoint]);
+        lastUpdateTime.value = Date.now();
+        scheduleOnRN(updatePath, [newPoint]);
       }
     })
     .onUpdate((event) => {
@@ -288,7 +292,12 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
           }));
 
           pathDataShared.value = updatedPath;
-          runOnJS(updatePath)(updatedPath);
+          // Throttle updates to ~30fps for better performance
+          const now = Date.now();
+          if (now - lastUpdateTime.value > 33) {
+            lastUpdateTime.value = now;
+            scheduleOnRN(updatePath, updatedPath);
+          }
           return;
         }
 
@@ -303,16 +312,20 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
 
         if (distance > 8) {
           pathDataShared.value = [...pathDataShared.value, newPoint];
-          runOnJS(updatePath)([...pathDataShared.value]);
+          // Throttle updates to ~30fps for better performance
+          const now = Date.now();
+          if (now - lastUpdateTime.value > 33) {
+            lastUpdateTime.value = now;
+            scheduleOnRN(updatePath, [...pathDataShared.value]);
+          }
         }
       }
     })
     .onEnd(() => {
       "worklet";
-      // Sync the final path position to React state before resetting
-      // This is critical for fixed aspect ratio selections that were moved
-      if (pathDataShared.value.length === 4) {
-        runOnJS(updatePath)([...pathDataShared.value]);
+      // Always sync final path to React state at the end of gesture
+      if (pathDataShared.value.length > 0) {
+        scheduleOnRN(updatePath, [...pathDataShared.value]);
       }
       isDrawingShared.value = false;
       panStartShared.value = null;
@@ -349,7 +362,7 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
 
       if (closestIndex >= 0) {
         selectedPointIndexRef.current = closestIndex;
-        runOnJS(setSelectedPointIndex)(closestIndex);
+        scheduleOnRN(setSelectedPointIndex, closestIndex);
       }
     })
     .onUpdate((event) => {
@@ -426,20 +439,33 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
           }
 
           pathDataShared.value = updatedPath;
-          runOnJS(updatePath)(updatedPath);
+          // Throttle updates to ~30fps for better performance
+          const now = Date.now();
+          if (now - lastUpdateTime.value > 33) {
+            lastUpdateTime.value = now;
+            scheduleOnRN(updatePath, updatedPath);
+          }
           return;
         }
       }
-
       const updatedPath = [...pathDataShared.value];
       updatedPath[currentSelected] = { x, y };
       pathDataShared.value = updatedPath;
-      runOnJS(updatePath)(updatedPath);
+      // Throttle updates to ~30fps for better performance
+      const now = Date.now();
+      if (now - lastUpdateTime.value > 33) {
+        lastUpdateTime.value = now;
+        scheduleOnRN(updatePath, updatedPath);
+      }
     })
     .onEnd(() => {
       "worklet";
+      // Sync final path to React at end of gesture
+      if (pathDataShared.value.length > 0) {
+        scheduleOnRN(updatePath, [...pathDataShared.value]);
+      }
       selectedPointIndexRef.current = null;
-      runOnJS(setSelectedPointIndex)(null);
+      scheduleOnRN(setSelectedPointIndex, null);
     });
 
   const clearPath = useCallback(() => {
@@ -560,7 +586,12 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
         y: p.y * scaleY,
       }));
 
-      const maskPath = buildPathString(scaledPoints, true);
+      // Simplify the path to reduce SVG rendering overhead
+      // Higher epsilon = more simplification (5 is a good balance)
+      const simplifiedPoints = simplifyPath(scaledPoints, 5);
+
+      // Use simplified path for better performance
+      const maskPath = buildPathString(simplifiedPoints, true);
 
       onComplete({
         croppedUri: manipResult.uri,

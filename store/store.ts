@@ -1,3 +1,4 @@
+import { getNextCreativeLayout } from "@/utiles/collage-layouts";
 import { create } from "zustand";
 
 export type Layer = {
@@ -110,10 +111,34 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
     }),
 
   // Fast update without history - use for real-time dragging
+  // Optimized to avoid unnecessary re-renders
   updateLayerFast: (id, partial) =>
-    set((s) => ({
-      layers: s.layers.map((l) => (l.id === id ? { ...l, ...partial } : l)),
-    })),
+    set((s) => {
+      const layerIndex = s.layers.findIndex((l) => l.id === id);
+      if (layerIndex === -1) return s;
+
+      const layer = s.layers[layerIndex];
+
+      // Check if any values actually changed to avoid unnecessary re-renders
+      let hasChanges = false;
+      for (const key in partial) {
+        if (
+          partial[key as keyof typeof partial] !==
+          layer[key as keyof typeof layer]
+        ) {
+          hasChanges = true;
+          break;
+        }
+      }
+
+      if (!hasChanges) return s;
+
+      // Create new array only when needed
+      const newLayers = [...s.layers];
+      newLayers[layerIndex] = { ...layer, ...partial };
+
+      return { layers: newLayers };
+    }),
 
   // Full update with history - use at end of gesture
   updateLayer: (id, partial) =>
@@ -168,21 +193,36 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       pushHistory(s);
       const { width: canvasWidth, height: canvasHeight } = get().canvas;
 
-      const randomizedLayers = s.layers.map((layer) => {
-        const scaledWidth = layer.width * layer.scale;
-        const scaledHeight = layer.height * layer.scale;
+      // Use creative layouts - cycles through different styles each time
 
-        const maxX = canvasWidth - scaledWidth;
-        const maxY = canvasHeight - scaledHeight;
+      const layoutResults = getNextCreativeLayout({
+        layers: s.layers,
+        canvasWidth,
+        canvasHeight,
+      });
 
-        const newX = Math.max(0, Math.random() * maxX);
-        const newY = Math.max(0, Math.random() * maxY);
+      const randomizedLayers = s.layers.map((layer, index) => {
+        const layout = layoutResults[index];
+
+        // Ensure images stay within canvas bounds
+        const scaledWidth = layer.width * layout.scale;
+        const scaledHeight = layer.height * layout.scale;
+
+        const clampedX = Math.max(
+          -scaledWidth * 0.3,
+          Math.min(canvasWidth - scaledWidth * 0.7, layout.x)
+        );
+        const clampedY = Math.max(
+          -scaledHeight * 0.3,
+          Math.min(canvasHeight - scaledHeight * 0.7, layout.y)
+        );
 
         return {
           ...layer,
-          x: newX,
-          y: newY,
-          rotation: Math.random() * 40 - 20, // Also adds a slight random rotation
+          x: clampedX,
+          y: clampedY,
+          scale: layout.scale,
+          rotation: layout.rotation,
         };
       });
 

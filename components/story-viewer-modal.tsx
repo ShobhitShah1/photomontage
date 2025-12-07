@@ -13,7 +13,6 @@ import {
 import Animated, {
   cancelAnimation,
   Easing,
-  runOnJS,
   SharedValue,
   useAnimatedStyle,
   useDerivedValue,
@@ -21,6 +20,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { scheduleOnRN } from "react-native-worklets";
 import { Text } from "./themed";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -44,7 +44,7 @@ const LoadingSpinner = React.memo(() => {
         (finished) => {
           if (finished) {
             rotation.value = 0;
-            runOnJS(animate)();
+            scheduleOnRN(animate);
           }
         }
       );
@@ -212,10 +212,10 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
 
       // If this is the last story (index is stories.length - 1), close modal
       if (index >= stories.length - 1) {
-        runOnJS(safeHandleClose)();
+        scheduleOnRN(safeHandleClose);
       } else {
         // Otherwise, go to next story
-        runOnJS(safeGoToIndex)(index + 1, true);
+        scheduleOnRN(safeGoToIndex, index + 1, true);
       }
     } catch (error) {
       console.error("Error in handleTimerComplete:", error);
@@ -310,10 +310,10 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     try {
       if (!isMountedShared.value) return;
 
-      runOnJS(setIsClosing)(false);
-      runOnJS(onClose)();
+      scheduleOnRN(setIsClosing, false);
+      scheduleOnRN(onClose);
     } catch (error) {
-      // Silently handle runOnJS errors when React instance is destroyed
+      // Silently handle scheduleOnRN errors when React instance is destroyed
     }
   };
 
@@ -478,10 +478,10 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     "worklet";
     try {
       if (!isClosing && isMountedShared.value) {
-        runOnJS(pauseAnimation)();
+        scheduleOnRN(pauseAnimation);
       }
     } catch (error) {
-      // Silently handle runOnJS errors when React instance is destroyed
+      // Silently handle scheduleOnRN errors when React instance is destroyed
     }
   };
 
@@ -499,7 +499,7 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
         event.translationY > screenHeight * 0.25 &&
         event.velocityY > 500
       ) {
-        runOnJS(safeHandleClose)();
+        scheduleOnRN(safeHandleClose);
         return;
       }
 
@@ -528,7 +528,7 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
           if (event.velocityX > 0) {
             // Swipe right = previous story
             if (currentIndex > 0 && stories?.length) {
-              runOnJS(safeGoToIndex)(currentIndex - 1, true);
+              scheduleOnRN(safeGoToIndex, currentIndex - 1, true);
             }
             return;
           } else {
@@ -538,9 +538,9 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
               currentIndex >= 0 &&
               currentIndex < stories.length - 1
             ) {
-              runOnJS(safeGoToIndex)(currentIndex + 1, true);
+              scheduleOnRN(safeGoToIndex, currentIndex + 1, true);
             } else {
-              runOnJS(safeHandleClose)();
+              scheduleOnRN(safeHandleClose);
             }
             return;
           }
@@ -554,14 +554,14 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
             currentIndex >= 0 &&
             currentIndex < stories.length - 1
           ) {
-            runOnJS(safeGoToIndex)(currentIndex + 1, true);
+            scheduleOnRN(safeGoToIndex, currentIndex + 1, true);
           } else {
-            runOnJS(safeHandleClose)();
+            scheduleOnRN(safeHandleClose);
           }
         } else if (event.translationX > threshold) {
           // Swipe right = previous story
           if (currentIndex > 0 && stories?.length) {
-            runOnJS(safeGoToIndex)(currentIndex - 1, true);
+            scheduleOnRN(safeGoToIndex, currentIndex - 1, true);
           }
         } else {
           translateX.value = withTiming(-currentIndex * screenWidth, {
@@ -571,9 +571,9 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
         }
       }
 
-      runOnJS(resumeAnimation)();
+      scheduleOnRN(resumeAnimation);
     } catch (error) {
-      // Silently handle runOnJS errors when React instance is destroyed
+      // Silently handle scheduleOnRN errors when React instance is destroyed
     }
   };
 
@@ -609,10 +609,10 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     "worklet";
     try {
       if (!isClosing && isMountedShared.value) {
-        runOnJS(pauseAnimation)();
+        scheduleOnRN(pauseAnimation);
       }
     } catch (error) {
-      // Silently handle runOnJS errors when React instance is destroyed
+      // Silently handle scheduleOnRN errors when React instance is destroyed
     }
   };
 
@@ -620,10 +620,10 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     "worklet";
     try {
       if (!isClosing && isMountedShared.value) {
-        runOnJS(resumeAnimation)();
+        scheduleOnRN(resumeAnimation);
       }
     } catch (error) {
-      // Silently handle runOnJS errors when React instance is destroyed
+      // Silently handle scheduleOnRN errors when React instance is destroyed
     }
   };
 

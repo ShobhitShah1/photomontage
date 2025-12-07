@@ -40,7 +40,14 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
 
   const handleChange = useCallback(
     (n: { x: number; y: number; scale: number; rotation: number }) => {
-      onChangeRef.current({ ...layerRef.current, ...n });
+      // Only update transform properties, preserve all other layer data
+      onChangeRef.current({
+        ...layerRef.current,
+        x: n.x,
+        y: n.y,
+        scale: n.scale,
+        rotation: n.rotation,
+      });
     },
     []
   );
@@ -54,6 +61,8 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
     onChange: handleChange,
   });
 
+  // Sync shared values when layer transform props change from external sources
+  // This handles undo/redo and other state changes
   useEffect(() => {
     sync(layer.x, layer.y, layer.scale, layer.rotation);
   }, [layer.x, layer.y, layer.scale, layer.rotation, sync]);
@@ -90,6 +99,9 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
 
   const clipId = `clip-${layer.id}`;
 
+  // Memoize the mask path to avoid re-parsing
+  const maskPathData = useMemo(() => layer.maskPath || "", [layer.maskPath]);
+
   if (!src) return null;
 
   return (
@@ -119,7 +131,7 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
             >
               <Defs>
                 <ClipPath id={clipId}>
-                  <Path d={layer.maskPath || ""} />
+                  <Path d={maskPathData} />
                 </ClipPath>
               </Defs>
               <SvgImage
@@ -133,7 +145,7 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
               />
               {isSelected && (
                 <Path
-                  d={layer.maskPath || ""}
+                  d={maskPathData}
                   fill="none"
                   stroke="white"
                   strokeWidth={2}
@@ -184,6 +196,12 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
 
 // Custom comparison for memo - only re-render when these specific props change
 const arePropsEqual = (prev: CanvasImageProps, next: CanvasImageProps) => {
+  // Fast path: if same layer reference, only check selection and callbacks
+  if (prev.layer === next.layer) {
+    return prev.isSelected === next.isSelected;
+  }
+
+  // Compare only essential properties that affect rendering
   return (
     prev.layer.id === next.layer.id &&
     prev.layer.x === next.layer.x &&

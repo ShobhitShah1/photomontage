@@ -8,6 +8,7 @@ import React, {
 import {
   Alert,
   BackHandler,
+  LayoutAnimation,
   LayoutChangeEvent,
   StyleSheet,
   useWindowDimensions,
@@ -45,6 +46,7 @@ import { DownloadProgress, DownloadService } from "@/services/download-service";
 import { useSelectionStore } from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
 import { ImagePickerModal } from "@/temp/components/image-picker-modal";
+import { createLayersFromImages } from "@/utiles/editor-utils";
 import { useIsFocused } from "@react-navigation/native";
 import { useFocusEffect, useRouter } from "expo-router";
 
@@ -150,48 +152,6 @@ const DraggablePreview = ({
       </Animated.View>
     </GestureDetector>
   );
-};
-
-export const createLayersFromImages = (
-  images: any[],
-  canvasWidth: number,
-  canvasHeight: number
-) => {
-  return images.map((image, index) => {
-    const imgWidth = image.width || 640;
-    const imgHeight = image.height || 640;
-
-    const maxWidth = canvasWidth * 0.6;
-    const maxHeight = canvasHeight * 0.6;
-
-    let displayWidth = imgWidth;
-    let displayHeight = imgHeight;
-
-    if (imgWidth > maxWidth || imgHeight > maxHeight) {
-      const scaleW = maxWidth / imgWidth;
-      const scaleH = maxHeight / imgHeight;
-      const scale = Math.min(scaleW, scaleH);
-      displayWidth = imgWidth * scale;
-      displayHeight = imgHeight * scale;
-    }
-
-    const x = (canvasWidth - displayWidth) / 2 + index * 20;
-    const y = (canvasHeight - displayHeight) / 2 + index * 20;
-
-    return {
-      id: image.id,
-      originalUri: image.uri,
-      x: Math.max(0, x),
-      y: Math.max(0, y),
-      scale: 1,
-      rotation: 0,
-      width: displayWidth,
-      height: displayHeight,
-      z: index + 1,
-      originalWidth: imgWidth,
-      originalHeight: imgHeight,
-    };
-  });
 };
 
 export default function EditorScreen() {
@@ -447,10 +407,25 @@ export default function EditorScreen() {
           originalHeight: selectedLayer.originalHeight,
         };
 
+        // Order matters to prevent visual flash:
+        // 1. First add the new layer (so it's in the render tree)
+        // 2. Then exit editing mode (transition to canvas view)
+        // 3. Finally deselect the layer
         addLayers([newLayer]);
 
-        setisDetailEditingEnable(false);
-        selectLayer(null);
+        // Use LayoutAnimation for smooth transition when exiting edit mode
+        // This prevents the jarring flash of components unmounting/remounting
+        setTimeout(() => {
+          LayoutAnimation.configureNext(
+            LayoutAnimation.create(
+              200,
+              LayoutAnimation.Types.easeInEaseOut,
+              LayoutAnimation.Properties.opacity
+            )
+          );
+          setisDetailEditingEnable(false);
+          selectLayer(null);
+        }, 50);
       } catch (error) {
         console.error("Error applying crop:", error);
         Alert.alert("Error", "Failed to apply crop. Please try again.");
