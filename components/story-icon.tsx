@@ -1,8 +1,7 @@
 import { FontFamily } from "@/constants/fonts";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -14,7 +13,7 @@ import { useTheme } from "../context/theme-context";
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface StoryIconProps {
-  image: string;
+  image: number | null;
   title: string;
   onPress?: () => void;
 }
@@ -76,11 +75,9 @@ export const StoryIcon: React.FC<StoryIconProps> = ({
         <View
           style={[styles.iconContainer, { backgroundColor: theme.background }]}
         >
-          <Image
-            source={{ uri: image }}
-            style={styles.icon}
-            contentFit="cover"
-          />
+          {image && (
+            <Image source={image} style={styles.icon} resizeMode="cover" />
+          )}
         </View>
       </LinearGradient>
     </AnimatedPressable>

@@ -13,7 +13,7 @@ export interface Story {
   username?: string;
   profile_image?: string;
 
-  image?: string;
+  image?: number;
 }
 
 export interface StoryRowProps {

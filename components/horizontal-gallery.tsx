@@ -1,0 +1,260 @@
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useRef, useState } from "react";
+import { Dimensions, FlatList, StyleSheet, View } from "react-native";
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+interface GalleryImage {
+  id: string;
+  image: any; // Changed from string to any to support require() (number) and URI strings
+  isLiked?: boolean;
+}
+
+interface HorizontalGalleryProps {
+  images: GalleryImage[];
+  activeIndex?: number;
+  onImagePress?: (image: GalleryImage) => void;
+  onLikePress?: (imageId: string, liked: boolean) => void;
+}
+
+const containerWidth = SCREEN_WIDTH - 15; // 16px padding on each side
+const containerHeight = Dimensions.get("window").height * 0.88; // Fixed height that works well for most images
+
+export const HorizontalGallery: React.FC<HorizontalGalleryProps> = ({
+  images,
+  activeIndex = 0,
+  onImagePress,
+  onLikePress,
+}) => {
+  const flatListRef = useRef<FlatList>(null);
+  const [liked, setLiked] = useState<{ [key: string]: boolean }>({});
+
+  useEffect(() => {
+    if (images.length > 0 && activeIndex >= 0 && activeIndex < images.length) {
+      flatListRef.current?.scrollToIndex({
+        index: activeIndex,
+        animated: true,
+      });
+      scrollX.value = withTiming(activeIndex * containerWidth);
+    }
+  }, [activeIndex, images.length]);
+
+  const likeScale = useSharedValue(1);
+  const scrollX = useSharedValue(0);
+
+  const handleLike = (imageId: string) => {
+    const isLiked = !liked[imageId];
+    setLiked((prev) => ({ ...prev, [imageId]: isLiked }));
+    onLikePress?.(imageId, isLiked);
+
+    likeScale.value = withTiming(1.2, { duration: 100 }, () => {
+      likeScale.value = withTiming(1, { duration: 100 });
+    });
+  };
+
+  const likeButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: likeScale.value }],
+  }));
+
+  const renderImage = ({
+    item,
+    index,
+  }: {
+    item: GalleryImage;
+    index: number;
+  }) => (
+    <View
+      style={[
+        styles.imageContainer,
+        { width: containerWidth, height: containerHeight },
+      ]}
+    >
+      <Image source={item.image} style={styles.image} contentFit="fill" />
+
+      <LinearGradient
+        colors={["transparent", "rgba(0,0,0,0.4)"]}
+        style={styles.gradientOverlay}
+        pointerEvents="none"
+      />
+
+      {/* {onLikePress && (
+        <View style={styles.overlay}>
+          <Pressable
+            onPress={() => handleLike(item.id)}
+            style={styles.likeButtonContainer}
+          >
+            <Animated.View style={[styles.likeButton, likeButtonStyle]}>
+              <Ionicons
+                name={liked[item.id] ? "heart" : "heart-outline"}
+                size={22}
+                color={liked[item.id] ? "#FF3040" : "#FFFFFF"}
+              />
+            </Animated.View>
+          </Pressable>
+        </View>
+      )} */}
+    </View>
+  );
+
+  const onScroll = (event: any) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    scrollX.value = contentOffsetX;
+  };
+
+  const AnimatedIndicator = ({ index }: { index: number }) => {
+    const animatedStyle = useAnimatedStyle(() => {
+      const inputRange = [
+        (index - 1) * containerWidth,
+        index * containerWidth,
+        (index + 1) * containerWidth,
+      ];
+
+      const width = interpolate(scrollX.value, inputRange, [6, 24, 6], "clamp");
+
+      const opacity = interpolate(
+        scrollX.value,
+        inputRange,
+        [0.4, 1, 0.4],
+        "clamp"
+      );
+
+      return {
+        width: withTiming(width, { duration: 150 }),
+        opacity: withTiming(opacity, { duration: 150 }),
+      };
+    });
+
+    return <Animated.View style={[styles.animatedIndicator, animatedStyle]} />;
+  };
+
+  return (
+    <View style={styles.container}>
+      <View
+        style={[
+          styles.carouselContainer,
+          { width: containerWidth, height: containerHeight },
+        ]}
+      >
+        <FlatList
+          ref={flatListRef}
+          data={images}
+          renderItem={renderImage}
+          keyExtractor={(item) => item.id}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          snapToInterval={containerWidth}
+          snapToAlignment="center"
+          decelerationRate="fast"
+          bounces={false}
+          scrollEnabled={false}
+          removeClippedSubviews={false}
+          maxToRenderPerBatch={3}
+          initialNumToRender={2}
+          windowSize={5}
+          getItemLayout={(data, index) => ({
+            length: containerWidth,
+            offset: containerWidth * index,
+            index,
+          })}
+        />
+
+        {/* <View style={styles.fixedIndicatorOverlay}>
+          {images.map((_, index) => (
+            <AnimatedIndicator key={index} index={index} />
+          ))}
+        </View> */}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  carouselContainer: {
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: "#1a1a1a",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  imageContainer: {
+    position: "relative",
+    backgroundColor: "#1a1a1a",
+  },
+  image: {
+    width: "100%",
+    height: containerHeight,
+  },
+  gradientOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+  },
+  overlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 30,
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  likeButtonContainer: {
+    alignItems: "center",
+  },
+  likeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  fixedIndicatorOverlay: {
+    position: "absolute",
+    bottom: 12,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    zIndex: 10,
+  },
+  animatedIndicator: {
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+});

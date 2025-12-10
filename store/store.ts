@@ -1,4 +1,3 @@
-import { getNextCreativeLayout } from "@/utiles/collage-layouts";
 import { create } from "zustand";
 
 export type Layer = {
@@ -193,36 +192,30 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       pushHistory(s);
       const { width: canvasWidth, height: canvasHeight } = get().canvas;
 
-      // Use creative layouts - cycles through different styles each time
+      const randomizedLayers = s.layers.map((layer) => {
+        // Random scale between 0.4 and 0.8 to ensure they fit reasonably well
+        const scale = 0.4 + Math.random() * 0.4;
 
-      const layoutResults = getNextCreativeLayout({
-        layers: s.layers,
-        canvasWidth,
-        canvasHeight,
-      });
+        // Random rotation between -15 and 15 degrees
+        const rotation = (Math.random() - 0.5) * 30;
 
-      const randomizedLayers = s.layers.map((layer, index) => {
-        const layout = layoutResults[index];
+        const scaledWidth = layer.width * scale;
+        const scaledHeight = layer.height * scale;
 
-        // Ensure images stay within canvas bounds
-        const scaledWidth = layer.width * layout.scale;
-        const scaledHeight = layer.height * layout.scale;
+        // Ensure strict bounds: random position ensuring fully inside canvas
+        // Math.max(0, ...) ensures we don't get negative values if image is larger than canvas (though scale handles most cases)
+        const maxX = Math.max(0, canvasWidth - scaledWidth);
+        const maxY = Math.max(0, canvasHeight - scaledHeight);
 
-        const clampedX = Math.max(
-          -scaledWidth * 0.3,
-          Math.min(canvasWidth - scaledWidth * 0.7, layout.x)
-        );
-        const clampedY = Math.max(
-          -scaledHeight * 0.3,
-          Math.min(canvasHeight - scaledHeight * 0.7, layout.y)
-        );
+        const x = Math.random() * maxX;
+        const y = Math.random() * maxY;
 
         return {
           ...layer,
-          x: clampedX,
-          y: clampedY,
-          scale: layout.scale,
-          rotation: layout.rotation,
+          x,
+          y,
+          scale,
+          rotation,
         };
       });
 

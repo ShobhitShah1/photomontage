@@ -4,10 +4,9 @@ import { FlatList, StyleSheet, View } from "react-native";
 import { StoryIcon } from "./story-icon";
 import { StoryViewerModal } from "./story-viewer-modal";
 
-export const StoryRow: React.FC<StoryRowProps> = ({
-  stories,
-  contestStoryData,
-}) => {
+export const StoryRow: React.FC<
+  StoryRowProps & { onStoryPress?: (index: number) => void }
+> = ({ stories, contestStoryData, onStoryPress }) => {
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
 
@@ -18,11 +17,12 @@ export const StoryRow: React.FC<StoryRowProps> = ({
 
   const renderStory = ({ item, index }: { item: Story; index: number }) => (
     <StoryIcon
-      image={item.image || ""}
+      image={item.image || null}
       title={item.username || ""}
       onPress={() => {
-        setSelectedStoryIndex(index);
-        setShowStoryModal(true);
+        onStoryPress?.(index);
+        // setSelectedStoryIndex(index);
+        // setShowStoryModal(true);
       }}
     />
   );
