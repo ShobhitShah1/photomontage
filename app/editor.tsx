@@ -47,6 +47,7 @@ import { useSelectionStore } from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
 import { ImagePickerModal } from "@/temp/components/image-picker-modal";
 import { createLayersFromImages } from "@/utiles/editor-utils";
+import { filterImagesBySize } from "@/utiles/image-validation";
 import { useIsFocused } from "@react-navigation/native";
 import { useFocusEffect, useRouter } from "expo-router";
 
@@ -219,9 +220,22 @@ export default function EditorScreen() {
     if (!sessionId || images.length === 0) return;
     if (hydratedSession.current === sessionId) return;
 
+    const { validImages, invalidCount } = filterImagesBySize(images);
+
+    if (invalidCount > 0) {
+      console.warn(
+        `[PERF] Skipping ${invalidCount} oversized image(s) during hydration`
+      );
+    }
+
+    if (validImages.length === 0) {
+      console.warn("[PERF] No valid images to hydrate (all too large)");
+      return;
+    }
+
     reset();
     const nextLayers = createLayersFromImages(
-      images,
+      validImages,
       canvasSize.width,
       canvasSize.height
     );

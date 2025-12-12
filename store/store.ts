@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 
 export type Layer = {
   id: string;
@@ -260,3 +261,20 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
       ...createInitialEditorState(),
     })),
 }));
+
+export const useLayerIds = () =>
+  useEditorStore(useShallow((state) => state.layers.map((l) => l.id)));
+
+export const useLayer = (id: string) =>
+  useEditorStore((state) => state.layers.find((l) => l.id === id));
+export const useSelectedLayerId = () =>
+  useEditorStore((state) => state.selectedLayerId);
+
+export const useSortedLayers = () =>
+  useEditorStore(
+    useShallow((state) =>
+      state.layers.filter((l) => l.croppedUri || l.maskPath)
+    )
+  );
+
+export { useShallow };

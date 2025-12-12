@@ -9,9 +9,14 @@ import {
   assignZIndexToLayers,
   createLayersFromImages,
 } from "@/utiles/editor-utils";
+import {
+  filterPickerAssets,
+  hasValidDimensions,
+  showInvalidDimensionsAlert,
+  showOversizedImageAlert,
+} from "@/utiles/image-validation";
 import type { ImagePickerAsset } from "expo-image-picker";
 import { useCallback } from "react";
-import { Alert } from "react-native";
 
 interface UseEditorImagesOptions {
   canvasWidth: number;
@@ -42,51 +47,24 @@ export const useEditorImages = (
     (assets: ImagePickerAsset[], source: SelectionSource) => {
       if (assets.length === 0) return;
 
-      const MAX_DIMENSION = 6000;
-      const MAX_PIXELS = 24_000_000; // 24 MP
-      const oversizedAssets: ImagePickerAsset[] = [];
+      const { validImages, invalidCount, hasInvalid } =
+        filterPickerAssets(assets);
 
-      const safeAssets = assets.filter((asset) => {
-        const width = asset.width ?? 0;
-        const height = asset.height ?? 0;
-
-        if (!width || !height || width <= 0 || height <= 0) {
-          console.error("Asset has invalid dimensions:", asset.uri, {
-            width,
-            height,
-          });
-          return false;
-        }
-
-        if (
-          width > MAX_DIMENSION ||
-          height > MAX_DIMENSION ||
-          width * height > MAX_PIXELS
-        ) {
-          oversizedAssets.push(asset);
-          return false;
-        }
-        return true;
-      });
-
-      if (oversizedAssets.length > 0) {
-        Alert.alert(
-          "Image Too Large",
-          "One or more selected images exceed the maximum supported size (24 MP or 6000px in any dimension). Please select a smaller image."
-        );
+      if (hasInvalid) {
+        showOversizedImageAlert(invalidCount);
       }
 
-      if (safeAssets.length === 0) {
-        if (assets.length > 0 && oversizedAssets.length === 0) {
-          Alert.alert(
-            "Invalid Images",
-            "Selected images have invalid dimensions. Please try different images."
-          );
+      if (validImages.length === 0) {
+        const hasAnyWithBadDimensions = assets.some(
+          (a) => !hasValidDimensions(a.width ?? 0, a.height ?? 0)
+        );
+        if (assets.length > 0 && !hasInvalid && hasAnyWithBadDimensions) {
+          showInvalidDimensionsAlert();
         }
         return;
       }
 
-      const newImages = mapAssetsToImages(safeAssets, source);
+      const newImages = mapAssetsToImages(validImages, source);
       appendImages(newImages);
 
       const newLayers = createLayersFromImages(
@@ -118,10 +96,6 @@ export const useEditorImages = (
       });
 
       if (validLayers.length === 0) {
-        Alert.alert(
-          "Error",
-          "Failed to create layers from images. Please try again."
-        );
         return;
       }
 
@@ -137,13 +111,6 @@ export const useEditorImages = (
 
       if (finalValidLayers.length > 0) {
         addLayers(finalValidLayers);
-        // Don't auto-select newly uploaded images
-        // User can manually select from the bottom bar
-      } else {
-        Alert.alert(
-          "Error",
-          "Could not add images to canvas. Please try again."
-        );
       }
     },
     [

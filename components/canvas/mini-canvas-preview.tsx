@@ -1,5 +1,5 @@
 import { Layer } from "@/store/store";
-import React, { FC, useMemo } from "react";
+import React, { FC, memo, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import Svg, { ClipPath, Defs, Path, Image as SvgImage } from "react-native-svg";
 
@@ -13,7 +13,7 @@ interface MiniCanvasPreviewProps {
   borderColor?: string;
 }
 
-export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
+const MiniCanvasPreviewComponent: FC<MiniCanvasPreviewProps> = ({
   layers,
   canvasWidth,
   canvasHeight,
@@ -111,6 +111,22 @@ export const MiniCanvasPreview: FC<MiniCanvasPreviewProps> = ({
     </View>
   );
 };
+
+export const MiniCanvasPreview = memo(
+  MiniCanvasPreviewComponent,
+  (prev, next) => {
+    const prevIds = prev.layers.map((l) => l.id).join(",");
+    const nextIds = next.layers.map((l) => l.id).join(",");
+
+    return (
+      prevIds === nextIds &&
+      prev.canvasWidth === next.canvasWidth &&
+      prev.canvasHeight === next.canvasHeight &&
+      prev.previewWidth === next.previewWidth &&
+      prev.previewHeight === next.previewHeight
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   container: {

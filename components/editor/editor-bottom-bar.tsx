@@ -105,6 +105,16 @@ const EditorBottomBar: FC<EditorBottomBarInterface> = ({
         style={styles.flatListStyle}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.columnWrapperStyle}
+        keyExtractor={(item) => item.id}
+        getItemLayout={(_, index) => ({
+          length: 63,
+          offset: 63 * index,
+          index,
+        })}
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
         renderItem={({ index, item }) => {
           return (
             <Pressable

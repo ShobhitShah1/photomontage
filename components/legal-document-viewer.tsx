@@ -148,7 +148,7 @@ function LegalDocumentViewer({
           ]}
           onPress={loadDocument}
         >
-          <Text style={[styles.retryButtonText, { color: theme.background }]}>
+          <Text style={[styles.retryButtonText, { color: theme.textPrimary }]}>
             Retry
           </Text>
         </Pressable>
@@ -196,7 +196,8 @@ const styles = StyleSheet.create({
   centerContent: {
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
   },
   header: {
     marginVertical: 5,

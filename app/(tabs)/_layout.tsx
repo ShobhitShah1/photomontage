@@ -9,6 +9,10 @@ import {
 } from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
 import { ImagePickerModal } from "@/temp/components/image-picker-modal";
+import {
+  filterPickerAssets,
+  showOversizedImageAlert,
+} from "@/utiles/image-validation";
 import type { ImagePickerAsset } from "expo-image-picker";
 import { Tabs, usePathname, useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useState } from "react";
@@ -60,7 +64,7 @@ const TabItem: React.FC<TabItemProps> = memo(
       if (isFocused) {
         bubbleOpacity.value = withTiming(1, config);
         bubbleScale.value = withTiming(1, config);
-        iconTranslateY.value = withTiming(-23, config);
+        iconTranslateY.value = withTiming(-22, config);
       } else {
         iconTranslateY.value = withTiming(0, config);
         bubbleScale.value = withTiming(0, config);
@@ -86,8 +90,8 @@ const TabItem: React.FC<TabItemProps> = memo(
     const iconSize = useAnimatedStyle(() => {
       "worklet";
       return {
-        width: withTiming(isFocused ? (isCenter ? 25 : 22) : 21),
-        height: withTiming(isFocused ? (isCenter ? 25 : 22) : 21),
+        width: withTiming(isFocused ? (isCenter ? 24 : 22) : 21),
+        height: withTiming(isFocused ? (isCenter ? 24 : 22) : 21),
       };
     });
 
@@ -114,11 +118,7 @@ const TabItem: React.FC<TabItemProps> = memo(
           <Text
             style={[
               styles.tabLabel,
-              {
-                color: theme.textPrimary,
-                fontSize: 12,
-                width: 50,
-              },
+              { width: 50, fontSize: 13, color: theme.textPrimary },
             ]}
           >
             {label?.toString()}
@@ -206,7 +206,14 @@ export default function TabLayout() {
 
   const handlePicked = useCallback(
     (assets: ImagePickerAsset[], source: SelectionSource) => {
-      const prepared = mapAssetsToImages(assets, source);
+      const { validImages, invalidCount, hasInvalid } =
+        filterPickerAssets(assets);
+
+      if (hasInvalid) {
+        showOversizedImageAlert(invalidCount);
+      }
+
+      const prepared = mapAssetsToImages(validImages, source);
       if (prepared.length === 0) {
         setPickerVisible(false);
         return;

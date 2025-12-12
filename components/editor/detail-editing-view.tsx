@@ -773,6 +773,8 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
                   source={{ uri }}
                   style={styles.image}
                   contentFit="contain"
+                  cachePolicy="memory-disk"
+                  priority="high"
                   onLoadEnd={() => setIsImageLoading(false)}
                   onError={() => setIsImageLoading(false)}
                 />

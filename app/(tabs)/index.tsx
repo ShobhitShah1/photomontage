@@ -40,7 +40,6 @@ export default function Tab() {
     ];
   }, []);
 
-  // Use the same data for gallery for now, or map it
   const galleryImages = useMemo(() => contestStoryData, [contestStoryData]);
 
   useEffect(() => {
@@ -55,8 +54,6 @@ export default function Tab() {
 
   const onStoryPress = (index: number) => {
     setGalleryIndex(index);
-    // Optional: Reset timer on interaction? The effect will naturally continue but might jump quickly.
-    // Ideally we might want to pause or reset. For simple logic, the state update is enough.
   };
 
   return (

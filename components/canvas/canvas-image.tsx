@@ -23,6 +23,17 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
   onChange,
   onRequestCrop,
 }) => {
+  // trackRender(`CanvasImage-${layer.id.slice(0, 8)}`);
+
+  // useEffect(() => {
+  //   if (layer.originalWidth && layer.originalHeight) {
+  //     logImageSize(
+  //       `Layer-${layer.id.slice(0, 8)}`,
+  //       layer.originalWidth,
+  //       layer.originalHeight
+  //     );
+  //   }
+  // }, [layer.id]);
   // Use refs to avoid recreating callbacks that would cause gesture recreation
   const layerRef = useRef(layer);
   const onSelectRef = useRef(onSelect);
@@ -116,45 +127,18 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
           },
           animatedStyle,
         ]}
+        shouldRasterizeIOS={true}
+        renderToHardwareTextureAndroid={true}
       >
         {hasMask ? (
-          <View
-            style={[
-              styles.maskedContainer,
-              { width: displayWidth, height: displayHeight },
-            ]}
-          >
-            <Svg
-              width={displayWidth}
-              height={displayHeight}
-              style={StyleSheet.absoluteFill}
-            >
-              <Defs>
-                <ClipPath id={clipId}>
-                  <Path d={maskPathData} />
-                </ClipPath>
-              </Defs>
-              <SvgImage
-                href={src}
-                x="0"
-                y="0"
-                width={displayWidth}
-                height={displayHeight}
-                clipPath={`url(#${clipId})`}
-                preserveAspectRatio="none"
-              />
-              {isSelected && (
-                <Path
-                  d={maskPathData}
-                  fill="none"
-                  stroke="white"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              )}
-            </Svg>
-          </View>
+          <MaskedContent
+            src={src}
+            displayWidth={displayWidth}
+            displayHeight={displayHeight}
+            clipId={clipId}
+            maskPathData={maskPathData}
+            isSelected={isSelected}
+          />
         ) : (
           <View
             style={{
@@ -173,6 +157,7 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
               contentFit="fill"
               cachePolicy="memory-disk"
               recyclingKey={layer.id}
+              priority="high"
             />
             {isSelected && (
               <View
@@ -193,6 +178,73 @@ const CanvasImageComponent: React.FC<CanvasImageProps> = ({
     </GestureDetector>
   );
 };
+
+interface MaskedContentProps {
+  src: string;
+  displayWidth: number;
+  displayHeight: number;
+  clipId: string;
+  maskPathData: string;
+  isSelected: boolean;
+}
+
+const MaskedContent = memo(
+  ({
+    src,
+    displayWidth,
+    displayHeight,
+    clipId,
+    maskPathData,
+    isSelected,
+  }: MaskedContentProps) => {
+    return (
+      <View
+        style={[
+          styles.maskedContainer,
+          { width: displayWidth, height: displayHeight },
+        ]}
+      >
+        <Svg
+          width={displayWidth}
+          height={displayHeight}
+          style={StyleSheet.absoluteFill}
+        >
+          <Defs>
+            <ClipPath id={clipId}>
+              <Path d={maskPathData} />
+            </ClipPath>
+          </Defs>
+          <SvgImage
+            href={src}
+            x="0"
+            y="0"
+            width={displayWidth}
+            height={displayHeight}
+            clipPath={`url(#${clipId})`}
+            preserveAspectRatio="none"
+          />
+          {isSelected && (
+            <Path
+              d={maskPathData}
+              fill="none"
+              stroke="white"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+        </Svg>
+      </View>
+    );
+  },
+  (prev, next) =>
+    prev.src === next.src &&
+    prev.displayWidth === next.displayWidth &&
+    prev.displayHeight === next.displayHeight &&
+    prev.clipId === next.clipId &&
+    prev.maskPathData === next.maskPathData &&
+    prev.isSelected === next.isSelected
+);
 
 // Custom comparison for memo - only re-render when these specific props change
 const arePropsEqual = (prev: CanvasImageProps, next: CanvasImageProps) => {
