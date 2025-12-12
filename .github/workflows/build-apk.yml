@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - perf-improve
 
 jobs:
   build-apk:

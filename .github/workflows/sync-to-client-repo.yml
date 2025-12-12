@@ -3,7 +3,8 @@ name: Sync to Client Repo
 on:
   push:
     branches:
-      - main  # Change this to your working branch
+      - main
+      - perf-improve
 
 jobs:
   sync:
