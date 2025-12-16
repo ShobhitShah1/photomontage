@@ -2,11 +2,11 @@
 
 A powerful and intuitive React Native application for creating photo montages and editing images. Built with Expo, it offers a seamless experience for selecting, arranging, and manipulating images on a canvas.
 
-## 📚 Documentation
+## Documentation
 
 For a detailed technical overview of the codebase, including architecture, state management, and component structure, please refer to [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## ✨ Features
+## Features
 
 - **Multi-Image Selection**: Pick multiple images from your library or camera.
 - **Canvas Manipulation**: Freely scale, rotate, and move images using intuitive gestures.
@@ -17,7 +17,7 @@ For a detailed technical overview of the codebase, including architecture, state
 - **High-Quality Export**: Save your creations in various qualities.
 - **Undo/Redo**: Full history support for all your edits.
 
-## 🚀 Getting Started
+## Getting Started
 
 1.  **Install dependencies**:
     ```bash

@@ -81,6 +81,11 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
   const pathDataShared = useSharedValue<Point[]>([]);
   const lastUpdateTime = useSharedValue(0); // Throttle updates to ~30fps
 
+  // Pinch gesture shared values for scaling the aspect ratio rectangle
+  const pinchStartScale = useSharedValue(1);
+  const pinchStartPath = useSharedValue<Point[]>([]);
+  const isPinching = useSharedValue(false); // Track pinch state to prevent pan interference
+
   const uri = layer.originalUri;
   const isEditingCropped = false;
 
@@ -215,9 +220,9 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
     []
   );
 
+  // Only updates React state for rendering - shared value is managed by gestures directly
   const updatePath = useCallback((newPath: Point[]) => {
     setPath(newPath);
-    pathDataShared.value = newPath;
     pathLengthShared.value = newPath.length;
   }, []);
 
@@ -282,7 +287,12 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
         );
 
         // If we started a pan with 4 points (fixed aspect ratio), move the selection
-        if (panStartShared.value && pathStartShared.value.length === 4) {
+        // Skip if pinching to prevent gesture interference
+        if (
+          panStartShared.value &&
+          pathStartShared.value.length === 4 &&
+          !isPinching.value
+        ) {
           const deltaX = relativeX - panStartShared.value.x;
           const deltaY = relativeY - panStartShared.value.y;
 
@@ -291,10 +301,12 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
             y: Math.max(0, Math.min(displaySizeHeight.value, point.y + deltaY)),
           }));
 
+          // Update shared value and sync to React state for rendering
           pathDataShared.value = updatedPath;
-          // Throttle updates to ~30fps for better performance
+
+          // Sync to React state at ~60fps for smooth rendering
           const now = Date.now();
-          if (now - lastUpdateTime.value > 33) {
+          if (now - lastUpdateTime.value > 16) {
             lastUpdateTime.value = now;
             scheduleOnRN(updatePath, updatedPath);
           }
@@ -331,6 +343,100 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
       panStartShared.value = null;
       pathStartShared.value = [];
     });
+
+  // Pinch gesture for scaling the aspect ratio rectangle
+  const pinchGesture = Gesture.Pinch()
+    .onStart(() => {
+      "worklet";
+      // Only allow pinch scaling when we have a 4-point rect (fixed aspect ratio)
+      if (pathDataShared.value.length !== 4) return;
+
+      isPinching.value = true;
+      pinchStartScale.value = 1;
+      pinchStartPath.value = [...pathDataShared.value];
+    })
+    .onUpdate((event) => {
+      "worklet";
+      if (pinchStartPath.value.length !== 4 || !isReadyShared.value) return;
+
+      const scale = event.scale;
+      const startPath = pinchStartPath.value;
+
+      // Calculate the center of the original rectangle
+      const centerX =
+        (startPath[0].x + startPath[1].x + startPath[2].x + startPath[3].x) / 4;
+      const centerY =
+        (startPath[0].y + startPath[1].y + startPath[2].y + startPath[3].y) / 4;
+
+      // Calculate original dimensions
+      const originalWidth = Math.abs(startPath[1].x - startPath[0].x);
+      const originalHeight = Math.abs(startPath[2].y - startPath[1].y);
+
+      // Apply scale with constraints
+      const minScale = 0.2; // Minimum 20% of original
+      const maxScale = 3.0; // Maximum 300% of original
+      const clampedScale = Math.max(minScale, Math.min(maxScale, scale));
+
+      const newWidth = originalWidth * clampedScale;
+      const newHeight = originalHeight * clampedScale;
+
+      // Ensure the rectangle stays within bounds
+      const halfWidth = newWidth / 2;
+      const halfHeight = newHeight / 2;
+
+      // Clamp center position to keep rectangle within display bounds
+      const clampedCenterX = Math.max(
+        halfWidth,
+        Math.min(displaySizeWidth.value - halfWidth, centerX)
+      );
+      const clampedCenterY = Math.max(
+        halfHeight,
+        Math.min(displaySizeHeight.value - halfHeight, centerY)
+      );
+
+      // Build the scaled rectangle path
+      const scaledPath: Point[] = [
+        { x: clampedCenterX - halfWidth, y: clampedCenterY - halfHeight },
+        { x: clampedCenterX + halfWidth, y: clampedCenterY - halfHeight },
+        { x: clampedCenterX + halfWidth, y: clampedCenterY + halfHeight },
+        { x: clampedCenterX - halfWidth, y: clampedCenterY + halfHeight },
+      ];
+
+      // Clamp all points to stay within display bounds
+      for (let i = 0; i < scaledPath.length; i++) {
+        scaledPath[i].x = Math.max(
+          0,
+          Math.min(displaySizeWidth.value, scaledPath[i].x)
+        );
+        scaledPath[i].y = Math.max(
+          0,
+          Math.min(displaySizeHeight.value, scaledPath[i].y)
+        );
+      }
+
+      // Update shared value and sync to React state for rendering
+      pathDataShared.value = scaledPath;
+
+      // Sync to React state at ~60fps for smooth rendering
+      const now = Date.now();
+      if (now - lastUpdateTime.value > 16) {
+        lastUpdateTime.value = now;
+        scheduleOnRN(updatePath, scaledPath);
+      }
+    })
+    .onEnd(() => {
+      "worklet";
+      // Sync final scaled path to React state
+      if (pathDataShared.value.length > 0) {
+        scheduleOnRN(updatePath, [...pathDataShared.value]);
+      }
+      isPinching.value = false;
+      pinchStartPath.value = [];
+      pinchStartScale.value = 1;
+    });
+
+  // Combine pan and pinch gestures for simultaneous handling
+  const combinedGesture = Gesture.Simultaneous(panGesture, pinchGesture);
 
   const selectedPointIndexRef = useRef<number | null>(null);
 
@@ -438,10 +544,12 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
             );
           }
 
+          // Update shared value and sync to React state for rendering
           pathDataShared.value = updatedPath;
-          // Throttle updates to ~30fps for better performance
+
+          // Sync to React state at ~60fps for smooth rendering
           const now = Date.now();
-          if (now - lastUpdateTime.value > 33) {
+          if (now - lastUpdateTime.value > 16) {
             lastUpdateTime.value = now;
             scheduleOnRN(updatePath, updatedPath);
           }
@@ -450,10 +558,12 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
       }
       const updatedPath = [...pathDataShared.value];
       updatedPath[currentSelected] = { x, y };
+      // Update shared value and sync to React state for rendering
       pathDataShared.value = updatedPath;
-      // Throttle updates to ~30fps for better performance
+
+      // Sync to React state at ~60fps for smooth rendering
       const now = Date.now();
-      if (now - lastUpdateTime.value > 33) {
+      if (now - lastUpdateTime.value > 16) {
         lastUpdateTime.value = now;
         scheduleOnRN(updatePath, updatedPath);
       }
@@ -748,7 +858,7 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
 
   return (
     <View style={styles.container} onLayout={onLayout}>
-      <GestureDetector gesture={editMode ? pointEditGesture : panGesture}>
+      <GestureDetector gesture={editMode ? pointEditGesture : combinedGesture}>
         <View style={styles.content}>
           {showLoader && (
             <View style={styles.loader}>
@@ -793,34 +903,31 @@ export const DetailEditingView: React.FC<DetailEditingViewProps> = ({
                 pointerEvents="none"
               >
                 <Svg width={displaySize.width} height={displaySize.height}>
+                  {/* Render path from React state */}
                   {displayPath && (
-                    <>
-                      <Path
-                        d={displayPath}
-                        fill="none"
-                        stroke={colors.primary}
-                        strokeWidth={4}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      {editMode &&
-                        path.map((point, index) => (
-                          <Circle
-                            key={index}
-                            cx={point.x}
-                            cy={point.y}
-                            r={8}
-                            fill={
-                              index === selectedPointIndex
-                                ? colors.primary
-                                : "#fff"
-                            }
-                            stroke={colors.primary}
-                            strokeWidth={2}
-                          />
-                        ))}
-                    </>
+                    <Path
+                      d={displayPath}
+                      fill="none"
+                      stroke={colors.primary}
+                      strokeWidth={4}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   )}
+                  {editMode &&
+                    path.map((point, index) => (
+                      <Circle
+                        key={index}
+                        cx={point.x}
+                        cy={point.y}
+                        r={8}
+                        fill={
+                          index === selectedPointIndex ? colors.primary : "#fff"
+                        }
+                        stroke={colors.primary}
+                        strokeWidth={2}
+                      />
+                    ))}
                 </Svg>
               </View>
             </>

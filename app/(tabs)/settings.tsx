@@ -20,7 +20,6 @@ import {
   Pressable as RNPressable,
   StyleProp,
   StyleSheet,
-  Switch,
   TextStyle,
 } from "react-native";
 
@@ -118,7 +117,7 @@ function SettingsScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
         style={styles.content}
       >
-        <SectionHeader title="Preference" style={{ marginTop: 0 }} />
+        {/* <SectionHeader title="Preference" style={{ marginTop: 0 }} />
         <View style={[styles.section]}>
           <View
             style={[
@@ -138,7 +137,7 @@ function SettingsScreen() {
               thumbColor={isDark ? "#fff" : "#fff"}
             />
           </View>
-        </View>
+        </View> */}
 
         <SectionHeader title="Contact" />
         <View
@@ -146,9 +145,9 @@ function SettingsScreen() {
         >
           <SettingsItem
             title="Contact Us"
-            onPress={() => Linking.openURL("mailto:gigglam01@gmail.com")}
+            onPress={() => Linking.openURL("mailto:photomontage.app@gmail.com")}
           />
-          <View
+          {/* <View
             style={[
               styles.settingsItem,
               { backgroundColor: theme.cardBackground },
@@ -171,7 +170,7 @@ function SettingsScreen() {
                 onPress={openFacebook}
               />
             </View>
-          </View>
+          </View> */}
         </View>
 
         <SectionHeader title="Support" />
