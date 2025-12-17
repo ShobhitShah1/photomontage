@@ -14,7 +14,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_STORAGE_KEY = "@gigglam/theme_mode";
+const THEME_STORAGE_KEY = "@photomontage/theme_mode";
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,

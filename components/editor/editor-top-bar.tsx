@@ -10,7 +10,7 @@ import { useTheme } from "@/context/theme-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { FC, memo, useCallback } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Pressable } from "../themed";
 
 // Types
@@ -28,6 +28,7 @@ interface EditorTopBarProps {
   selectedAspect: AspectKey;
   onBringToFront?: () => void;
   onSendToBack?: () => void;
+  onDeleteLayer?: () => void;
   editingActions?: {
     clearPath: () => void;
     toggleEditMode: () => void;
@@ -131,6 +132,7 @@ const EditorTopBar: FC<EditorTopBarProps> = ({
   selectedAspect,
   onBringToFront,
   onSendToBack,
+  onDeleteLayer,
 }) => {
   const { theme } = useTheme();
 
@@ -174,53 +176,71 @@ const EditorTopBar: FC<EditorTopBarProps> = ({
   // Render preview view (undo, redo, shuffle, download)
   return (
     <View style={styles.container}>
-      <View style={styles.leftGroup}>
-        <IconButton
-          icon={ic_undo}
-          onPress={onUndo}
-          backgroundColor={theme.buttonBackground}
-          iconTintColor={theme.buttonIcon}
-        />
-        <IconButton
-          icon={ic_redo}
-          onPress={onRedo}
-          backgroundColor={theme.buttonBackground}
-          iconTintColor={theme.buttonIcon}
-        />
-        <IconButton
-          icon={ic_shuffle}
-          onPress={onShuffle}
-          backgroundColor={theme.buttonBackground}
-          iconTintColor={theme.buttonIcon}
-        />
-        {hasSelectedLayer && (
-          <>
-            <IconButton
-              content={
-                <MaterialCommunityIcons
-                  name="arrange-bring-forward"
-                  size={20}
-                  color={theme.buttonIcon}
-                />
-              }
-              onPress={onBringToFront}
-              backgroundColor={theme.buttonBackground}
-              iconTintColor={theme.buttonIcon}
-            />
-            <IconButton
-              content={
-                <MaterialCommunityIcons
-                  name="arrange-send-backward"
-                  size={20}
-                  color={theme.buttonIcon}
-                />
-              }
-              onPress={onSendToBack}
-              backgroundColor={theme.buttonBackground}
-              iconTintColor={theme.buttonIcon}
-            />
-          </>
-        )}
+      <View style={{ flex: 1, marginRight: 10 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.leftGroup}
+        >
+          <IconButton
+            icon={ic_undo}
+            onPress={onUndo}
+            backgroundColor={theme.buttonBackground}
+            iconTintColor={theme.buttonIcon}
+          />
+          <IconButton
+            icon={ic_redo}
+            onPress={onRedo}
+            backgroundColor={theme.buttonBackground}
+            iconTintColor={theme.buttonIcon}
+          />
+          <IconButton
+            icon={ic_shuffle}
+            onPress={onShuffle}
+            backgroundColor={theme.buttonBackground}
+            iconTintColor={theme.buttonIcon}
+          />
+          {hasSelectedLayer && (
+            <>
+              <IconButton
+                content={
+                  <MaterialCommunityIcons
+                    name="arrange-bring-forward"
+                    size={20}
+                    color={theme.buttonIcon}
+                  />
+                }
+                onPress={onBringToFront}
+                backgroundColor={theme.buttonBackground}
+                iconTintColor={theme.buttonIcon}
+              />
+              <IconButton
+                content={
+                  <MaterialCommunityIcons
+                    name="arrange-send-backward"
+                    size={20}
+                    color={theme.buttonIcon}
+                  />
+                }
+                onPress={onSendToBack}
+                backgroundColor={theme.buttonBackground}
+                iconTintColor={theme.buttonIcon}
+              />
+              <IconButton
+                content={
+                  <MaterialCommunityIcons
+                    name="trash-can-outline"
+                    size={20}
+                    color="#FF3B30"
+                  />
+                }
+                onPress={onDeleteLayer}
+                backgroundColor={theme.buttonBackground}
+                iconTintColor={theme.buttonIcon}
+              />
+            </>
+          )}
+        </ScrollView>
       </View>
 
       <View style={styles.rightGroup}>

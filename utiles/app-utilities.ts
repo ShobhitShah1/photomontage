@@ -28,8 +28,8 @@ export const openAppForRating = async () => {
  * Opens the app store directly (fallback method)
  */
 const openAppStore = async () => {
-  const appId = "your-app-id"; // Replace with your actual App Store ID
-  const playStoreId = "com.yourcompany.gigglam"; // Replace with your actual Play Store package name
+  const appId = "6741764663";
+  const playStoreId = "com.photomontage";
 
   try {
     if (Platform.OS === "ios") {
@@ -61,7 +61,7 @@ const openAppStore = async () => {
     console.error("Error opening app store:", error);
     Alert.alert(
       "Error",
-      "Unable to open the app store. Please search for Gigglam in your app store."
+      "Unable to open the app store. Please search for Photomontage in your app store."
     );
   }
 };
@@ -73,16 +73,16 @@ export const shareAppWithFriends = async () => {
   try {
     const appUrl =
       Platform.OS === "ios"
-        ? "https://apps.apple.com/app/gigglam/id1234567890"
-        : "https://play.google.com/store/apps/details?id=com.gigglam";
+        ? "https://apps.apple.com/app/photomontage/id6741764663"
+        : "https://play.google.com/store/apps/details?id=com.photomontage";
 
-    const message = `Check out Gigglam! 🎉\n\nCreate rooms, share images, and have fun with friends!\n\nDownload it here: ${appUrl}`;
+    const message = `Check out Photomontage! 📸\n\nI found this amazing app for editing photos and making collages. It's super easy to use and you don't even need an account! \n\nDownload it here: ${appUrl}`;
 
     const shareOptions = {
-      title: "Share Gigglam with Friends",
+      title: "Share Photomontage",
       message: message,
       url: appUrl,
-      subject: "Check out Gigglam!",
+      subject: "Have you seen Photomontage?",
     };
 
     try {
@@ -92,8 +92,8 @@ export const shareAppWithFriends = async () => {
     console.error("Error sharing app:", error);
 
     Alert.alert(
-      "Share Gigglam",
-      "Check out Gigglam! 🎉\n\nCreate rooms, share images, and have fun with friends!",
+      "Share Photomontage",
+      `Check out Photomontage! \n\nI found this amazing app for editing photos and making collages. It's super easy to use and you don't even need an account!`,
       [
         { text: "OK", style: "default" },
         { text: "Cancel", style: "cancel" },
@@ -137,9 +137,9 @@ export const getAppVersion = () => {
 export const getAppInfo = () => {
   const { version, buildNumber } = getAppVersion();
   return {
-    name: "Gigglam",
+    name: "Photomontage",
     version,
     buildNumber,
-    description: "Create rooms, share images, and have fun with friends!",
+    description: "The easiest way to edit photos and create stunning collages!",
   };
 };

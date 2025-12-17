@@ -9,10 +9,7 @@ import {
 } from "@/store/selection-store";
 import { useEditorStore } from "@/store/store";
 import { ImagePickerModal } from "@/temp/components/image-picker-modal";
-import {
-  filterPickerAssets,
-  showOversizedImageAlert,
-} from "@/utiles/image-validation";
+import { processImages } from "@/utiles/image-validation";
 import type { ImagePickerAsset } from "expo-image-picker";
 import { Tabs, usePathname, useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useState } from "react";
@@ -205,15 +202,10 @@ export default function TabLayout() {
   const resetEditor = useEditorStore((state) => state.reset);
 
   const handlePicked = useCallback(
-    (assets: ImagePickerAsset[], source: SelectionSource) => {
-      const { validImages, invalidCount, hasInvalid } =
-        filterPickerAssets(assets);
+    async (assets: ImagePickerAsset[], source: SelectionSource) => {
+      const processedImages = await processImages(assets);
 
-      if (hasInvalid) {
-        showOversizedImageAlert(invalidCount);
-      }
-
-      const prepared = mapAssetsToImages(validImages, source);
+      const prepared = mapAssetsToImages(processedImages, source);
       if (prepared.length === 0) {
         setPickerVisible(false);
         return;

@@ -1,11 +1,12 @@
 import LegalDocumentViewer from "@/components/legal-document-viewer";
-import { getLibraryLicense } from "@/services/api-service";
+import LibraryLicenseData from "@/data/library-license.json";
+import { LegalDocument } from "@/services/api-service";
 import React, { memo } from "react";
 
 function OpenSourceLicenseScreen() {
   return (
     <LegalDocumentViewer
-      fetchDocument={getLibraryLicense}
+      document={LibraryLicenseData.data as unknown as LegalDocument}
       fallbackTitle="Open Source Licenses"
     />
   );

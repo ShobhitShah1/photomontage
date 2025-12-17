@@ -49,7 +49,7 @@ export const shareImage = async ({
       await Share.open({
         url: base64Image,
         type: "image/png",
-        message: "I made this with Gigglam!",
+        message: "I made this with Photomontage!",
       });
       onSuccess?.();
       return;
@@ -79,7 +79,7 @@ export const shareImage = async ({
       type: "image/*",
       social,
       filename: "shared_image.png",
-      message: "I made this with Gigglam!",
+      message: "I made this with Photomontage!",
     };
 
     await Share.shareSingle(shareOptions);

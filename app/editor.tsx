@@ -203,6 +203,8 @@ export default function EditorScreen() {
     randomizeLayers: shuffle,
     bringToFront,
     sendToBack,
+    removeLayer,
+    setCanvas,
   } = useEditorStore();
 
   const { handleImagePicked, handleImageDelete } = useEditorImages({
@@ -255,10 +257,14 @@ export default function EditorScreen() {
     [layers]
   );
 
-  const handleCanvasLayout = useCallback((e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    setCanvasSize({ width, height });
-  }, []);
+  const handleCanvasLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const { width, height } = e.nativeEvent.layout;
+      setCanvasSize({ width, height });
+      setCanvas({ width, height });
+    },
+    [setCanvas]
+  );
 
   const handleSelectLayer = useCallback(
     (id: string | null) => {
@@ -535,6 +541,26 @@ export default function EditorScreen() {
     if (selectedLayerId) sendToBack(selectedLayerId);
   }, [selectedLayerId, sendToBack]);
 
+  const handleDeleteLayer = useCallback(() => {
+    if (selectedLayerId) {
+      Alert.alert(
+        "Delete Image",
+        "Are you sure you want to delete this image?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              removeLayer(selectedLayerId);
+              setActive(null);
+            },
+          },
+        ]
+      );
+    }
+  }, [selectedLayerId, removeLayer, setActive]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
@@ -551,6 +577,7 @@ export default function EditorScreen() {
           selectedAspect={selectedAspectRatio}
           onBringToFront={handleBringToFront}
           onSendToBack={handleSendToBack}
+          onDeleteLayer={handleDeleteLayer}
         />
 
         <View style={styles.canvasWrapper}>

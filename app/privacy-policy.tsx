@@ -1,11 +1,12 @@
 import LegalDocumentViewer from "@/components/legal-document-viewer";
-import { getPrivacyPolicy } from "@/services/api-service";
+import PrivacyPolicyData from "@/data/privacy-policy.json";
+import { LegalDocument } from "@/services/api-service";
 import React, { memo } from "react";
 
 function PrivacyPolicyScreen() {
   return (
     <LegalDocumentViewer
-      fetchDocument={getPrivacyPolicy}
+      document={PrivacyPolicyData.data as LegalDocument}
       fallbackTitle="Privacy Policy"
     />
   );

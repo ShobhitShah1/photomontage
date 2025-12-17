@@ -3,6 +3,7 @@
  * Centralized functions for image size checks and filtering
  */
 
+import * as ImageManipulator from "expo-image-manipulator";
 import type { ImagePickerAsset } from "expo-image-picker";
 import { Alert } from "react-native";
 
@@ -21,6 +22,11 @@ export const MAX_IMAGE_PIXELS = 5_000_000;
  * Maximum megapixels as a human-readable number
  */
 export const MAX_IMAGE_MEGAPIXELS = 5;
+
+/**
+ * Maximum file size in bytes (5 MB)
+ */
+export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
 /**
  * Minimal image info interface for validation
@@ -278,4 +284,75 @@ export function logImageSize(
       `[PERF] ${label}: Large image detected! ${getImageSizeInfo(width, height)}`
     );
   }
+}
+
+/**
+ * Process a single image: validate and compress if necessary
+ * Checks for both file size (>5MB) and dimensions (>2500px or >5MP)
+ */
+export async function processImageForUpload(
+  asset: ImagePickerAsset
+): Promise<ImagePickerAsset> {
+  const { width, height, fileSize, uri } = asset;
+
+  // If no size info or URI, return as is
+  if (!uri) return asset;
+
+  const currentSize = fileSize ?? 0;
+  const isTooLargeMb = currentSize > MAX_FILE_SIZE_BYTES;
+  const isTooLargeDims = isImageTooLarge(width, height);
+
+  if (!isTooLargeMb && !isTooLargeDims) {
+    return asset;
+  }
+
+  // Calculate target dims
+  let targetWidth = width;
+  let targetHeight = height;
+
+  if (isTooLargeDims) {
+    const aspectRatio = width / height;
+    if (width > height) {
+      targetWidth = MAX_IMAGE_DIMENSION;
+      targetHeight = Math.round(MAX_IMAGE_DIMENSION / aspectRatio);
+    } else {
+      targetHeight = MAX_IMAGE_DIMENSION;
+      targetWidth = Math.round(MAX_IMAGE_DIMENSION * aspectRatio);
+    }
+  }
+
+  // Compress
+  try {
+    const actions: ImageManipulator.Action[] = [];
+
+    if (isTooLargeDims) {
+      actions.push({ resize: { width: targetWidth, height: targetHeight } });
+    }
+
+    const result = await ImageManipulator.manipulateAsync(uri, actions, {
+      compress: 0.7, // Compress to ensure < 5MB if it was large
+      format: ImageManipulator.SaveFormat.JPEG,
+    });
+
+    return {
+      ...asset,
+      uri: result.uri,
+      width: result.width,
+      height: result.height,
+      // We assume the file size is now valid or significantly reduced
+    };
+  } catch (error) {
+    console.warn("Image compression failed", error);
+    return asset;
+  }
+}
+
+/**
+ * Process multiple images for upload
+ * Validates and compresses any images that exceed limits
+ */
+export async function processImages(
+  assets: ImagePickerAsset[]
+): Promise<ImagePickerAsset[]> {
+  return Promise.all(assets.map((asset) => processImageForUpload(asset)));
 }

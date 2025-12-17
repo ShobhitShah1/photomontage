@@ -1,0 +1,11 @@
+{
+  "code": 200,
+  "data": {
+    "_id": "68edce8c78f7b0d4f366d98f",
+    "title": "Privacy Policy",
+    "content": "<h2>Introduction</h2><p>Photomontage respects your privacy. This Privacy Policy describes how we handle your information when you use our mobile application.</p><h2>No Account Required</h2><p>You do not need to create an account to use Photomontage. We do not ask for or store your name, email address, phone number, or any other personal contact information.</p><h2>Information We Collect</h2><p><strong>Device Permissions:</strong> To provide our image editing features, we require access to your device's Camera and Photo Gallery. This access is strictly used to allow you to select, capture, and save images within the app.</p><p><strong>Local Processing:</strong> All image processing and editing is performed locally on your device. Your photos are not uploaded to our servers unless you explicitly choose to share them via third-party services (like social media apps) using the native sharing functionality.</p><h2>How We Use Information</h2><p>Since we do not collect personal information, we do not use your data for marketing, tracking, or selling to third parties. Any data access is solely for the purpose of the app's functionality—creating and saving your photomontages.</p><h2>Data Security</h2><p>Because your images and data remain on your device, you retain full control over them. We recommend protecting your device with standard security measures (like a passcode or biometrics) to keep your local data secure.</p><h2>Children's Privacy</h2><p>Our application does not collect any personal information from anyone, including children under the age of 13.</p><h2>Changes to This Policy</h2><p>We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy within the app.</p><h2>Contact Us</h2><p>If you have any questions about this privacy policy, please contact us at <a href='mailto:photomontage.app@gmail.com'>photomontage.app@gmail.com</a>.</p>",
+    "version": "1.0",
+    "updatedAt": "2025-12-17T00:00:00.000Z"
+  },
+  "message": "success."
+}

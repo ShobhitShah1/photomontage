@@ -1,11 +1,12 @@
 import LegalDocumentViewer from "@/components/legal-document-viewer";
-import { getTermsOfUse } from "@/services/api-service";
+import TermsOfUseData from "@/data/terms-of-use.json";
+import { LegalDocument } from "@/services/api-service";
 import React, { memo } from "react";
 
 function TermsOfUseScreen() {
   return (
     <LegalDocumentViewer
-      fetchDocument={getTermsOfUse}
+      document={TermsOfUseData.data as LegalDocument}
       fallbackTitle="Terms of Use"
     />
   );

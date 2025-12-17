@@ -191,37 +191,92 @@ export const useEditorStore = create<EditorState & Actions>((set, get) => ({
     set((s) => {
       if (s.layers.length === 0) return {};
       pushHistory(s);
-      const { width: canvasWidth, height: canvasHeight } = get().canvas;
+      let { width: canvasWidth, height: canvasHeight } = get().canvas;
 
-      const randomizedLayers = s.layers.map((layer) => {
-        // Random scale between 0.4 and 0.8 to ensure they fit reasonably well
-        const scale = 0.4 + Math.random() * 0.4;
+      // Fallback if canvas dimensions are not set (e.g., initial load or race condition)
+      if (canvasWidth === 0 || canvasHeight === 0) {
+        // Assuming a standard screen size as fallback, but ideally this should come from store
+        // We can try to infer from layers or just default to a safe 300x300 to avoid 0/0
+        console.warn("Canvas dimensions 0, using fallback for shuffle");
+        canvasWidth = 350;
+        canvasHeight = 500;
+      }
+
+      const layerCount = s.layers.length;
+      if (layerCount === 0) return {};
+
+      // Calculate grid dimensions
+      // We want a roughly square grid, or slightly landscape if canvas is landscape
+      const cols = Math.ceil(Math.sqrt(layerCount));
+      const rows = Math.ceil(layerCount / cols);
+
+      const cellWidth = canvasWidth / cols;
+      const cellHeight = canvasHeight / rows;
+
+      // Create a shuffled array of indices to randomize which layer goes to which cell
+      const indices = Array.from({ length: layerCount }, (_, i) => i);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+
+      const shuffledLayers = s.layers.map((layer, i) => {
+        // Keep original scale
+        const scale = layer.scale;
 
         // Random rotation between -15 and 15 degrees
         const rotation = (Math.random() - 0.5) * 30;
 
+        // Grid position
+        const gridIndex = indices[i];
+        const col = gridIndex % cols;
+        const row = Math.floor(gridIndex / cols);
+
+        // Center of the cell
+        const cellCenterX = col * cellWidth + cellWidth / 2;
+        const cellCenterY = row * cellHeight + cellHeight / 2;
+
+        // Image dimensions
         const scaledWidth = layer.width * scale;
         const scaledHeight = layer.height * scale;
 
-        // Ensure strict bounds: random position ensuring fully inside canvas
-        // Math.max(0, ...) ensures we don't get negative values if image is larger than canvas (though scale handles most cases)
-        const maxX = Math.max(0, canvasWidth - scaledWidth);
-        const maxY = Math.max(0, canvasHeight - scaledHeight);
+        // Target position (centered in cell)
+        let targetX = cellCenterX - scaledWidth / 2;
+        let targetY = cellCenterY - scaledHeight / 2;
 
-        const x = Math.random() * maxX;
-        const y = Math.random() * maxY;
+        // Add some random jitter (up to 30% of cell size)
+        // This makes it look less like a perfect grid
+        const jitterX = (Math.random() - 0.5) * cellWidth * 0.6;
+        const jitterY = (Math.random() - 0.5) * cellHeight * 0.6;
+
+        targetX += jitterX;
+        targetY += jitterY;
+
+        // Optional: Bound checking to ensure it's not TOO far off screen
+        // Allow 20% overflow
+        const overflowX = canvasWidth * 0.2;
+        const overflowY = canvasHeight * 0.2;
+
+        // Clamp to generally stay within canvas + overflow
+        const minX = -scaledWidth / 2 - overflowX;
+        const maxX = canvasWidth - scaledWidth / 2 + overflowX;
+        const minY = -scaledHeight / 2 - overflowY;
+        const maxY = canvasHeight - scaledHeight / 2 + overflowY;
+
+        // We gently clamp, but prioritizing the grid structure
+        // If image is huge, let it be.
 
         return {
           ...layer,
-          x,
-          y,
+          x: targetX,
+          y: targetY,
           scale,
           rotation,
         };
       });
 
       return {
-        layers: randomizedLayers,
+        layers: shuffledLayers,
       };
     }),
 

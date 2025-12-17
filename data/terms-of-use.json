@@ -1,0 +1,11 @@
+{
+  "code": 200,
+  "data": {
+    "_id": "68edcf5178f7b0d4f366d992",
+    "title": "Terms of use",
+    "content": "<h2>Acceptance of Terms</h2><p>By accessing or using Photomontage, you agree to be bound by these Terms of Use. If you do not agree with any of these terms, you are prohibited from using this application.</p><h2>Description of Service</h2><p>Photomontage is a creative tool that allows users to edit images, create collages, and add effects. The service is provided as a local application on your device.</p><h2>Use of the Application</h2><p>Since Photomontage does not require an account, you are solely responsible for:</p><ul><li>The content you create and edit using the app</li><li>Ensuring you have the rights to use the photos you import</li><li>Managing the storage and backup of your images on your device</li></ul><h2>Acceptable Use</h2><p>You agree not to use the application to:</p><ul><li>Create content that violates any applicable laws</li><li>Infringe on the intellectual property rights of others</li><li>Attempt to reverse engineer or modify the application code</li></ul><h2>Intellectual Property</h2><p>You retain full ownership of the photos and content you edit with Photomontage. We do not claim ownership over your creations. The application structure, code, and original assets (like icons and default templates) remain the property of Photomontage.</p><h2>Disclaimer</h2><p>The application is provided 'as is' without warranties of any kind. We do not guarantee that the application will be error-free or that it will meet your specific requirements.</p><h2>Limitation of Liability</h2><p>In no event shall Photomontage be liable for any damages (including, without limitation, damages for loss of data) arising out of the use or inability to use the application.</p><h2>Changes to Terms</h2><p>We reserve the right to modify these terms at any time. Updates will be reflected within the application's 'Legal' section.</p><h2>Contact Information</h2><p>If you have any questions about these Terms of Use, please contact us at <a href='mailto:photomontage.app@gmail.com'>photomontage.app@gmail.com</a>.</p>",
+    "version": "1.0",
+    "updatedAt": "2025-12-17T00:00:00.000Z"
+  },
+  "message": "success."
+}

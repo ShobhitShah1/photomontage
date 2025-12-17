@@ -56,7 +56,7 @@ export const ShareImageModal: React.FC<ShareImageModalProps> = ({
   ) => {
     try {
       const shareMessage =
-        "I just created this amazing image with Gigglam! Join the contest and create your own.";
+        "I just created this amazing image with Photomontage! Join the contest and create your own.";
 
       switch (platform) {
         case "facebook":

@@ -1,14 +1,9 @@
-import {
-  Pressable,
-  Text,
-  useCommonThemedStyles,
-  View,
-} from "@/components/themed";
+import { Text, useCommonThemedStyles, View } from "@/components/themed";
 import { FontFamily } from "@/constants/fonts";
 import { useTheme } from "@/context/theme-context";
 import { LegalDocument } from "@/services/api-service";
-import React, { memo, useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet } from "react-native";
+import React, { memo } from "react";
+import { ScrollView, StyleSheet } from "react-native";
 import RenderHtml, {
   MixedStyleDeclaration,
   RenderersProps,
@@ -16,37 +11,34 @@ import RenderHtml, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface LegalDocumentViewerProps {
-  fetchDocument: () => Promise<{ data: LegalDocument }>;
+  document: LegalDocument;
   fallbackTitle: string;
 }
 
 function LegalDocumentViewer({
-  fetchDocument,
+  document,
   fallbackTitle,
 }: LegalDocumentViewerProps) {
   const { theme } = useTheme();
   const commonStyles = useCommonThemedStyles();
   const { bottom } = useSafeAreaInsets();
-  const [document, setDocument] = useState<LegalDocument | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadDocument = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetchDocument();
-      setDocument(response.data);
-    } catch (err) {
-      setError("Failed to load document. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchDocument]);
+  // const loadDocument = useCallback(async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+  //     const response = await fetchDocument();
+  //     setDocument(response.data);
+  //   } catch (err) {
+  //     setError("Failed to load document. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [fetchDocument]);
 
-  useEffect(() => {
-    loadDocument();
-  }, [loadDocument]);
+  // useEffect(() => {
+  //   loadDocument();
+  // }, [loadDocument]);
 
   const htmlContent = document?.content || "";
   const title = document?.title || fallbackTitle;
@@ -125,36 +117,6 @@ function LegalDocumentViewer({
       marginBottom: 8,
     },
   };
-
-  if (loading) {
-    return (
-      <View style={[commonStyles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={theme.authBackground} />
-        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-          Loading document...
-        </Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[commonStyles.container, styles.centerContent]}>
-        <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
-        <Pressable
-          style={[
-            styles.retryButton,
-            { backgroundColor: theme.authBackground },
-          ]}
-          onPress={loadDocument}
-        >
-          <Text style={[styles.retryButtonText, { color: theme.textPrimary }]}>
-            Retry
-          </Text>
-        </Pressable>
-      </View>
-    );
-  }
 
   return (
     <View style={[commonStyles.container, { paddingBottom: bottom }]}>
